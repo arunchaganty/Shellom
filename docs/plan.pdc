@@ -1,0 +1,29 @@
+%
+% Project Plan
+% 
+
+A basic high-level overview of the major challenges/goals for the project, some
+ideas on their implementation, and finally a rough timeline for the same.
+
+Goals
+=====
+
+* Design a system that allows abstraction of snippet tasks, and allows (1 weeks)
+  combination of snippets to form bigger snippets.
+    + Design a "script" representation that maintains the relations between snippets
+      (preferrably in XML?) (3 days) 
+    + Design a "compiler" that converts these XML snippets into an executable
+      (bash/python) (3 days)
+* Construct a small repository of these and test them out. (2 days)
+* Construct a UI that allows relations/connections between boxes to be formed (1 week)
+    + Connect together the UI and the underlying representation. (3 days)
+* Implement some method to download snippets from an online repository. (1 week)
+
+Total Duration = 1 + 1 + 1 + 1 + 1 = 6 weeks
+
+"Technologies"
+==============
+
+* Python
+* XML
+* PyGTK 

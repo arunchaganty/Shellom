@@ -1,0 +1,14 @@
+%
+% Implementation Ideas
+%
+
+Snippet Input/Output
+====================
+
+* Around every "snippet", create a class that defines:
+    i) The input data type
+    ii) The configurable parameters
+    iii) The output data type
+    iv) "Parameterised" code as a _string_ with a set of "keywords" in the code that are
+  replaced at 'compilation' time using regex.
+
