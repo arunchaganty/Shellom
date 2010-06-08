@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+
+# Author - Vikram Rao S
+# Date - 06-06-2010
+
+# NOT IN USE. THIS WAS A RUDIMENTARY VERSION'S MAIN.PY.
+# THIS IS USELESS UNTIL CHANGED
+
+
 #from xmlgen.py import *
 #from xmlparse.py import *
 from tasks import *
@@ -19,18 +27,18 @@ def main():
     opstring='<workflow>\n'
     nextoption=int(raw_input("... "))
     while not nextoption==-1 :
-    	opstring+='<%s>\n'%(options[nextoption])
+    	opstring+='  <%s>\n'%(options[nextoption])
     	nextinput=getInput(nextoption)
     	while not nextinput=='0' :
-    		opstring+='<%s id="%d">\n'%(nextinput,gid)
+    		opstring+='    <%s id="%d">'%(nextinput,gid)
     		print 'Present ID : %d'%(gid)
     		n=raw_input(nextinput+' ... ')
     		opstring+=ironout(n,BeautifulStoneSoup(opstring))
-    		opstring+='\n</%s>\n'%(nextinput)
+    		opstring+='</%s>\n'%(nextinput)
     		print 40*'-'
     		nextinput=getInput(nextoption)
     		gid+=1
-    	opstring+='</%s>\n'%(options[nextoption])
+    	opstring+='  </%s>\n'%(options[nextoption])
     	print '\n'.join(options)
     	nextoption=int(raw_input("... "))
     op=open('tmp/workflow.xml','w')
