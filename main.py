@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+
+# Author - Vikram Rao S
+# Date - 06-06-2010
+
+# NOT IN USE. THIS WAS A RUDIMENTARY VERSION'S MAIN.PY.
+# THIS IS USELESS UNTIL CHANGED
+
+
 #from xmlgen.py import *
 #from xmlparse.py import *
 from tasks import *
