@@ -6,12 +6,13 @@
 # repository
 
 import os
-import pickle
+
+repo=open('repository.py','a')
 
 class Snippet :   
 
     name=''
-    sname=''
+    sname=''   # Short name. This will be used as the XML tag.
     ID=0
     version=0
     details=[]
@@ -19,30 +20,18 @@ class Snippet :
     defaults=[]
     errors=[]
 
-    def validateInputs( self, inputs ):
+    def validateInputs( inputs ):
         pass
 
     def doJob( inputs ):
         pass
 
-#    def assignJob( self, fn ):  # Redundant ... due to Python-style object.function = a_new_function assignments.
-#        self.doJob=fn        # But this will remind me of the fact.
-
     def __init__( self, fn ):
         """ Creates a snippet with the given function as it's 'job'."""
         self.doJob=fn
 
-def addSnippetToRepo( snip ):
-    if snip.__class__==Snippet : # and len( snippets )<=snip.ID :
-        snippets.append( snip )    # I should index by ID and check for duplicates etc. Will do it later. 
+def executeForAll( snippet, listOfInputs ) :
+    """Support for batch application of a snippet. The idea is still vague. """
 
-def executeForAll( snippet, listofinputs ) :
-    for i in listofinputs :
+    for i in listOfInputs :
         snippet.doJob( i )
-
-#----------------------------------------------
-
-sn=open( 'snippets.dump', 'r' )  # Check if the file exists. If not,  create one and let snippets be an empty list.
-snippets=pickle.load( sn )
-sn.close()
-sn=open( 'snippets.dump', 'w' )

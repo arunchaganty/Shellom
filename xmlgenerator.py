@@ -3,76 +3,66 @@
 # Author - Vikram Rao S
 # Date - 06-08-2010
 # Purpose - This module generates xml content for a given snippet and a list of inputs
+# output, we can just return this 'pointer'.
+
+# IMPORTANT : CHANGED - Recursive XML scan supprts both input and output finding. The assumption
+# is that the last input to any snippet is actually a file name or anything else
+# that points to the snippet's output. So when some other snippet asks for it's
 # TO CHANGE - getxml() currently assumes that every snippet has a default. Think
 # about the assumption and change accordingly.
 
-import tasks
+from tasks import *
 from BeautifulSoup import BeautifulStoneSoup
 
-def auxinput( oldid, soup ) :
-    """Recursively find a previous input from an XML soup."""
+def aux( oldid, soup ) :
+    """Recursively find a previous input or output from an XML soup."""
 
     prev=soup.find( id=oldid ).string.strip()
 
-    if len(prev==0)
+    if len(prev)==0 :
         return 'ERROR'
 
     if prev[0]!='~' :
         return prev
 
-    if prev[1]=='o' :
-        return auxoutput( prev[1:], soup )
-    if prev[1]=='i' :
-        return auxinput( prev[1:], soup )
 
-def auxoutput( oldid, soup ) :
-    """Recursively find a previous output from an XML soup."""
+def getxml( xml, snippet, inputs, snip, inp ) :
+    """Generates the XML string for encoding a snippet and its inputs.
+    @param snip - the ID to give to the snippets
+    @param inp - the ID to give to the first input
+    """
     
-    prev=soup.find( id=oldid ).findChildren()[-1].string.strip()
     
-    if len(prev==0)
-        return 'ERROR'
-
-    if prev[0]!='~' :
-        return prev
+    if len( inputs )!=len( snippet.tags ) :
+        return list('ERROR')
     
-    if prev[1]=='o' :
-        return auxoutput( prev[1:], soup )
-    if prev[1]=='i' :
-        return auxinput( prev[1:], soup )
-
-def getxml( snipID, inputs, snip, inp ) :
-    """Generates the XML string for encoding a snippet and its inputs."""
-    
-    x=snippets[snipID]
-    
-    if len( inputs )!=len( x.tags ) :
-        return 'ERROR'
-    
-    for i in xrange( 1, len( inputs )+1 ) :
+    for i in range( 1, len( inputs ) ) :
         if inputs[i]=='' :
-            inputs[i]=x.defaults[i]
+            inputs[i]=snippet.defaults[i]
+
+    xml.append( '<%s snipID="%d" id="o%d">\n'%( snippet.sname, snippet.ID, snip ) )
     
-    xml=['<%s snipID="%d" id="o%d">\n'%( x.sname, snipID, snip )]
-    
-    for i in xrange( 1, len( inputs )+1 ) :
+    for i in range( len( inputs ) ) :
         inn=inputs[i].strip()
-        
-        if not inn[0]=='~' :
-            xml.append( '<%s id="i%d">%s</%s>\n'%( x.tags[i], inputs[i], inp, x.tags[i] ) )
+
+        if i==len( inputs )-1 :
+            iORo='o'
+        else :
+            iORo='i'
+       
+        if inn[0]!='~' :
+            xml.append( '<%s id="%s%d">%s</%s>\n'%( snippet.tags[i], iORo, inp, inputs[i], snippet.tags[i] ) )
             inp+=1
         else :
             soup=BeautifulStoneSoup( ''.join( xml ) )
-            xml.append( aux( inn[1:], soup ) )
         
-            if inn[1]=='o':
-                toBeAppended = auxoutput( soup, inn[1:] )
-            elif inn[1]=='i':
-                toBeAppended =  auxinput( soup, inn[1:] )
+            toBeAppended =  aux( inn[1:], soup )
 
             if toBeAppended=='ERROR' :
-                return 'ERROR'
+                return list('ERROR')
             else :
-                xml.append( toBeAppended )
-    
-    return ''.join( xml )
+                xml.append( '<%s id="%s%d">%s</%s>\n'%( snippet.tags[i], iORo, inp, toBeAppended, snippet.tags[i] ) )
+                inp+=1
+
+    xml.append( '</%s>'%( snippet.sname  )  )
+    return  xml
