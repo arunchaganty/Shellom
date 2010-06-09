@@ -14,7 +14,10 @@ def auxinput( oldid, soup ) :
 
     prev=soup.find( id=oldid ).string.strip()
 
-    if not prev[0]=='~' :
+    if len(prev==0)
+        return 'ERROR'
+
+    if prev[0]!='~' :
         return prev
 
     if prev[1]=='o' :
@@ -27,7 +30,10 @@ def auxoutput( oldid, soup ) :
     
     prev=soup.find( id=oldid ).findChildren()[-1].string.strip()
     
-    if not prev[0]=='~' :
+    if len(prev==0)
+        return 'ERROR'
+
+    if prev[0]!='~' :
         return prev
     
     if prev[1]=='o' :
@@ -40,8 +46,8 @@ def getxml( snipID, inputs, snip, inp ) :
     
     x=snippets[snipID]
     
-    if not len( inputs )==len( x.tags ) :
-        return ''
+    if len( inputs )!=len( x.tags ) :
+        return 'ERROR'
     
     for i in xrange( 1, len( inputs )+1 ) :
         if inputs[i]=='' :
@@ -60,8 +66,13 @@ def getxml( snipID, inputs, snip, inp ) :
             xml.append( aux( inn[1:], soup ) )
         
             if inn[1]=='o':
-                xml.append( auxoutput( soup, inn[1:] ) )
+                toBeAppended = auxoutput( soup, inn[1:] )
             elif inn[1]=='i':
-                xml.append( auxinput( soup, inn[1:] ) )
+                toBeAppended =  auxinput( soup, inn[1:] )
+
+            if toBeAppended=='ERROR' :
+                return 'ERROR'
+            else :
+                xml.append( toBeAppended )
     
     return ''.join( xml )
