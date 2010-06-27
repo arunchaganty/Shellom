@@ -40,7 +40,7 @@ def getxml( xml, snippet, inputs, snip, inp ) :
         if inputs[i]=='' :
             inputs[i]=snippet.defaults[i]
 
-    xml.append( '<%s snipID="%d" id="o%d">\n'%( snippet.sname, snippet.ID, snip ) )
+    xml.append( '<%s snipID="%d" id="s%d">\n'%( snippet.sname, snippet.ID, snip ) )
     
     for i in range( len( inputs ) ) :
         inn=inputs[i].strip()

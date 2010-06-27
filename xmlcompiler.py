@@ -21,7 +21,7 @@ def compile( xmlFileName,workflow ) :
     xmlFile.close()
     soup=BeautifulStoneSoup(xml)
 
-    toMain=['import repository']
+    toMain=['import sys\nsys.dont_write_bytecode = False\nsys.path.append("..")\nfrom repository import *']
 
     s=soup.workflow.findChild()
     temp=[s]
@@ -29,8 +29,9 @@ def compile( xmlFileName,workflow ) :
     for c in temp :
         io=c.findAll()
         io=[str( i.string ) for i in io]
-        toMain.append( '%s.doJob(%s)'%( repository.allSnippets[ str( c.name ).upper() ], io ) )
+        toMain.append( '%s().doJob(%s)'%( str( repository.allSnippets[ str( c.name ).upper() ] )[11:], io ) )
         
     wf=open( workflow,'w' )
     wf.write( '\n'.join( toMain ) )
+    wf.write( 'import os\nos.system( "rm repository.py repository.pyc" )\n' )
     wf.close()

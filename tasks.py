@@ -20,18 +20,18 @@ class Snippet :
     defaults=[]
     errors=[]
 
-    def validateInputs( inputs ):
+    def validateInputs(self, inputs ):
         pass
 
-    def doJob( inputs ):
+    def doJob( self, inputs ):
         pass
 
-    def __init__( self, fn ):
-        """ Creates a snippet with the given function as it's 'job'."""
-        self.doJob=fn
+    def __init__( self ):
+        pass
+        #""" Creates a snippet with the given function as it's 'job'."""
 
-def executeForAll( snippet, listOfInputs ) :
-    """Support for batch application of a snippet. The idea is still vague. """
-
-    for i in listOfInputs :
-        snippet.doJob( i )
+#def executeForAll( snippet, listOfInputs ) :
+#    """Support for batch application of a snippet. The idea is still vague. """
+#
+#    for i in listOfInputs :
+#        snippet.doJob( i )

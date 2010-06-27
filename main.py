@@ -4,7 +4,9 @@
 # Date - 06-06-2010
 # Purpose - The main script that is to be run.
 
-import sys, tasks, xmlgenerator, xmlcompiler, repository
+import sys
+sys.dont_write_bytecode = True
+import tasks, xmlgenerator, xmlcompiler, repository
 
 def main() :
     s=repository.allSnippets
