@@ -14,64 +14,22 @@ Snippet = tasks.Snippet
 
 allSnippets = {}
 
-class A(Snippet) :
-    name = 'The Snippet called A'
-    sname = 'A'
-    ID = -3
-    details = [ 'Give me a1', 'Give me a2', 'Give me a3' ]
-    tags = [ 'a1', 'a2', 'a3' ]
-    defaults = [ 'a1d', 'a2d', 'a3d' ]
-    errors = ['a1e', 'a2e', 'a3e' ]
-
-    def validateInputs(self, inputs) :
-        return True
-
-    def __init__(self) :
-        pass
-
-allSnippets[A.sname] = A
-
-# ---------------------------------------------------------------
-
-
-
-class B(Snippet) :
-
-    name = 'The Snippet called B'
-    sname = 'B'
-    ID = -2
-    details = [ 'Give me b1', 'Give me b2', 'Give me b3' ]
-    tags = [ 'b1', 'b2', 'b3' ]
-    defaults = [ 'b1d', 'b2d', 'b3d' ]
-    errors = ['b1e', 'b2e', 'b3e' ]
-
-    def validateInputs(self, inputs) :
-        return True
-
-    def __init__(self) :
-        pass
-
-allSnippets[B.sname] = B
-
-# ---------------------------------------------------------------
-
-
-class C(Snippet) :
-    name = 'The Snippet called C'
-    sname = 'C'
-    ID = 0
-    details = [ 'Give me c1', 'Give me c3', 'Give me c3' ]
-    tags = [ 'c1', 'c2', 'c3' ]
-    defaults = [ 'c1d', 'c2d', 'c3d' ]
-    errors = ['c1e', 'c2e', 'c3e' ]
-
-    def validateInputs(self, inputs) :
-        return True
-
-    def __init__(self) :
-        pass
-
-allSnippets[C.sname] = C
+# class A(Snippet) :
+#     name = 'The Snippet called A'
+#     sname = 'A'
+#     ID = -3
+#     details = [ 'Give me a1', 'Give me a2', 'Give me a3' ]
+#     tags = [ 'a1', 'a2', 'a3' ]
+#     defaults = [ 'a1d', 'a2d', 'a3d' ]
+#     errors = ['a1e', 'a2e', 'a3e' ]
+# 
+#     def validateInputs(self, inputs) :
+#         return True
+# 
+#     def __init__(self) :
+#         pass
+# 
+# allSnippets[A.sname] = A
 
 # ---------------------------------------------------------------
 

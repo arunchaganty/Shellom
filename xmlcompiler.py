@@ -24,6 +24,9 @@ def compile( xmlFileName,workflow ) :
     toMain=['import sys\nsys.dont_write_bytecode = False\nsys.path.append("..")\nfrom repository import *']
 
     s=soup.workflow.findChild()
+    if not s :
+        print 'No snippets selected !'
+        sys.exit( 1 )
     temp=[s]
     temp.extend( s.findNextSiblings() )
     for c in temp :
