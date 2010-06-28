@@ -6,7 +6,7 @@
 
 import sys
 sys.dont_write_bytecode = True
-import tasks, xmlgenerator, xmlcompiler, repository
+import os, tasks, xmlgenerator, xmlcompiler, repository
 
 def main() :
     s=repository.allSnippets
@@ -47,7 +47,8 @@ def main() :
         snipID+=1
 
     xml.append( '</workflow>' )
-
+    
+    os.system( 'mkdir tmp' )
     xmlFile=open( 'tmp/workflow.xml', 'w' )
     xmlFile.write( ''.join( xml ) )
     xmlFile.close()
