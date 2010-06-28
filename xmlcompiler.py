@@ -33,5 +33,5 @@ def compile( xmlFileName,workflow ) :
         
     wf=open( workflow,'w' )
     wf.write( '\n'.join( toMain ) )
-    wf.write( 'import os\nos.system( "rm repository.py repository.pyc" )\n' )
+    wf.write( '\nimport os\nos.system( "rm repository.py" )\n' )
     wf.close()

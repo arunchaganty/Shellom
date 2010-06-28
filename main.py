@@ -48,7 +48,8 @@ def main() :
 
     xml.append( '</workflow>' )
     
-    os.system( 'mkdir tmp' )
+    if not os.access( 'tmp', os.W_OK ) :
+        os.mkdir( 'tmp' )
     xmlFile=open( 'tmp/workflow.xml', 'w' )
     xmlFile.write( ''.join( xml ) )
     xmlFile.close()
