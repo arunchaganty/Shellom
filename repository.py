@@ -9,6 +9,7 @@ import tasks, os, random, re
 import Image # Resize Image needs this.
 import urllib2 # download_pictures needs this
 from BeautifulSoup import BeautifulSoup # download_pictures needs this
+import pexpect # Mount image needs this
 
 Snippet = tasks.Snippet
 
@@ -20,7 +21,7 @@ allSnippets = {}
 #     ID = -3
 #     details = [ 'Give me a1', 'Give me a2', 'Give me a3' ]
 #     tags = [ 'a1', 'a2', 'a3' ]
-#     defaults = [ 'a1d', 'a2d', 'a3d' ]
+#     defaultss = [ 'a1d', 'a2d', 'a3d' ]
 #     errors = ['a1e', 'a2e', 'a3e' ]
 # 
 #     def validateInputs(self, inputs) :
@@ -39,14 +40,14 @@ class clip2file( Snippet ) :
     ID = 1
     details = [ 'Output file' ]
     tags = [ 'outfile' ]
-    default = [ 'clip2file'+str( random.randint( 1,10000 ) ) ]
+    defaults = [ 'clip2file'+str( random.randint( 1,10000 ) ) ]
     errors = [ '' ]
 
     def validateInputs( self,inputs ) :
-        return True
+        return os.access( inputs[ 0 ] , os.F_OK ) and not os.access( inputs[ 0 ], os.W_OK )
 
     def doJob( self, inputs ) :
-        os.system( 'xclip -o -selection clipboard > %s'%( inputs[ 0 ] ) )
+        os.system( 'xclip -o -selection clipboard >> %s'%( inputs[ 0 ] ) )
 
 allSnippets[ clip2file.sname ] = clip2file
 
@@ -58,11 +59,11 @@ class text2wave( Snippet ) :
     ID = 2
     details = [ 'Input file', 'Output file' ]
     tags = [ 'infile', 'outfile' ]
-    default = [ '/dev/null', 'text2wave'+str( random.randint( 1,10000 ) ) ]
+    defaults = [ '/dev/null', 'text2wave'+str( random.randint( 1,10000 ) ) ]
     errors = [ '', '' ]
 
     def validateInputs( self,inputs ) :
-        return True
+        return os.access( inputs[ 1 ] , os.F_OK ) and not os.access( inputs[ 1 ], os.W_OK )
 
     def doJob( self, inputs ) :
         os.system( 'text2wave < "%s" > "%s"'%( inputs[ 0 ], inputs[ 1 ] ) )
@@ -77,16 +78,16 @@ class resize_image( Snippet ) :
     ID = 3
     details = [ 'Input Image', 'Resize yyy% or yyyxyyy', 'Output file' ]
     tags = [ 'infile', 'factor', 'outfile' ]
-    default = [ '/dev/null', '100%', 'resize'+str( random.randint( 1,10000 ) ) ]
+    defaults = [ '/dev/null', '100%', 'resize'+str( random.randint( 1,10000 ) ) ]
     errors = [ 'Input image not found', 'Wrong resize factor format. Type, for example as 64% or 640x480.', '' ]
 
     def validateInputs( self, inputs ) :
         err=[]
         if not os.access( inputs[0], os.R_OK ) :
             err.append( 0 )
-        #if not os.access( inputs[2], os.W_OK ) :
-        #    err.append( 2 )
-        if type( inputs[1] ) != str or len( inputs[1] ) == 0 or not ( re.match( '^\d+%$',inputs[1] ) or re.match('^\d+x\d+$', inputs[1] ) ) :
+        if os.access( inputs[2], os.F_OK ) and not os.access( inputs[2], os.W_OK ) :
+            err.append( 2 )
+        if type( inputs[1] ) != str or not ( re.match( '^\d+%$',inputs[1] ) or re.match('^\d+x\d+$', inputs[1] ) ) :
             err.append( 1 )
         return err
 
@@ -103,7 +104,6 @@ class resize_image( Snippet ) :
         if it :
             print it
         else :
-#            print 'convert %s -resize %s %s'%( inputs[0], cmd, inputs[2] )
             os.system( 'convert %s -resize %s %s'%( inputs[0], cmd, inputs[2] ) )
 
 allSnippets[ resize_image.sname ] = resize_image
@@ -116,12 +116,10 @@ class screenshot( Snippet ) :
     ID = 4
     details = [ 'Delay in seconds', 'Output image file' ]
     tags = [ 'delay', 'outfile' ]
-    default = [ '0', 'screenshot'+str( random.randint( 1,10000 ) ) ]
+    defaults = [ '0', 'screenshot'+str( random.randint( 1,10000 ) ) ]
     errors = [ '', '' ]
 
     def validateInputs ( self, inputs ) :
-        if len( inputs ) < 2 :
-            return False
         return re.match('^\d+$',inputs[0] )
 
     def doJob( self, inputs ) :
@@ -140,7 +138,7 @@ class download_pictures( Snippet ) :
     ID = 5
     details = [ 'URL of webpage', 'Folder to store images in' ]
     tags = [ 'url', 'folder' ]
-    default = [ 'http://www.google.com/', 'download_pictures'+str( random.randint( 1,10000 ) ) ]
+    defaults = [ 'http://www.google.com/', 'download_pictures'+str( random.randint( 1,10000 ) ) ]
     errors = [ '', '' ]
 
     def validateInputs( self, inputs ) :
@@ -162,5 +160,44 @@ class download_pictures( Snippet ) :
             ctr+=1
 
 allSnippets[ download_pictures.sname ] = download_pictures
+
+# ---------------------------------------------------------------
+
+class mount_disc_image( Snippet ) :
+    name = 'Mount an ISO or UDF disc image'
+    sname = 'MOUNT_DISC_IMAGE'
+    ID = 6
+    details = [ 'Path to image', 'Path to mount point', 'Root password','Unmount ? y or Y for \'yes\' and anything else for \'no\'' ]
+    tags = [ 'image', 'mountPoint', 'password', 'unmount' ]
+    defaults = [ '', '/media/mount_image'+str( random.randint( 1,10000 ) ), '', 'n' ]
+    errors = [ 'No image found', '', 'Wrong or no root password given', '' ]
+
+    def validateInputs( self, inputs ) :
+        return os.access( inputs[ 0 ], os.R_OK ) and not ( os.access( inputs[1], os.F_OK ) and not os.access( inputs[1], os.R_OK ) )
+
+    def doJob( self, inputs ) :
+        if inputs[3] in [ 'y', 'Y' ] :
+            command = 'sudo umount '+ inputs[1]
+        else :
+            if not os.access( inputs[1], os.F_OK ) :
+                os.mkdir( inputs[1] )
+            #-----------------------------------------
+            if inputs[0][-3:] in [ 'dmg', 'DMG' ] :
+                imgType = '-t dmg'
+            elif inputs[0][-3:] in [ 'iso', 'ISO' ] :
+                imgType = '-t iso9660'
+            else :
+                imgType = ''
+            #-----------------------------------------
+            command = 'sudo mount %s %s %s'%( imgType, inputs[0], inputs[1] )
+
+        print command
+        c = pexpect.spawn( command )
+        c.sendline( inputs[2] )
+        
+        if not os.access( inputs[1], os.F_OK ) :
+            os.mkdir( inputs[1] )
+
+allSnippets[ mount_disc_image.sname ] = mount_disc_image
 
 # ---------------------------------------------------------------

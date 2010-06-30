@@ -19,10 +19,10 @@ def aux( oldid, soup ) :
 
     prev=soup.find( id=oldid ).string.strip()
 
-    if len(prev)==0 :
+    if len(prev) == 0 :
         return 'ERROR'
 
-    if prev[0]!='~' :
+    if prev[0] != '~' :
         return prev
 
 
@@ -33,36 +33,36 @@ def getxml( xml, snippet, inputs, snip, inp ) :
     """
     
     
-    if len( inputs )!=len( snippet.tags ) :
+    if len( inputs ) != len( snippet.tags ) :
         return list('ERROR')
     
     for i in range( 1, len( inputs ) ) :
-        if inputs[i]=='' :
-            inputs[i]=snippet.defaults[i]
+        if inputs[i] == '' :
+            inputs[i] = ' ' + snippet.defaults[i]
 
     xml.append( '<%s snipID="%d" id="s%d">\n'%( snippet.sname, snippet.ID, snip ) )
     
     for i in range( len( inputs ) ) :
         inn=inputs[i].strip()
 
-        if i==len( inputs )-1 :
-            iORo='o'
+        if i == len( inputs )-1 :
+            iORo = 'o'
         else :
-            iORo='i'
+            iORo = 'i'
        
-        if inn[0]!='~' :
+        if inn[0] != '~' :
             xml.append( '<%s id="%s%d">%s</%s>\n'%( snippet.tags[i], iORo, inp, inputs[i], snippet.tags[i] ) )
-            inp+=1
+            inp += 1
         else :
-            soup=BeautifulStoneSoup( ''.join( xml ) )
+            soup = BeautifulStoneSoup( ''.join( xml ) )
         
             toBeAppended =  aux( inn[1:], soup )
 
-            if toBeAppended=='ERROR' :
+            if toBeAppended == 'ERROR' :
                 return list('ERROR')
             else :
                 xml.append( '<%s id="%s%d">%s</%s>\n'%( snippet.tags[i], iORo, inp, toBeAppended, snippet.tags[i] ) )
-                inp+=1
+                inp += 1
 
     xml.append( '</%s>'%( snippet.sname  )  )
     return  xml
