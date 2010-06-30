@@ -191,12 +191,12 @@ class mount_disc_image( Snippet ) :
             #-----------------------------------------
             command = 'sudo mount %s %s %s'%( imgType, inputs[0], inputs[1] )
 
-        print command
         c = pexpect.spawn( command )
-        c.sendline( inputs[2] )
         
-        if not os.access( inputs[1], os.F_OK ) :
+        if not os.access( inputs[1], os.F_OK ) :  # Create mount point if it doesn't exist
             os.mkdir( inputs[1] )
+
+        c.sendline( inputs[2] )
 
 allSnippets[ mount_disc_image.sname ] = mount_disc_image
 
