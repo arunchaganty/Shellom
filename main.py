@@ -34,7 +34,7 @@ def main() :
         print currentInputs
 
         # Input validation also has to be done !!
-        if True : #s[ currentSnippet ].validateInputs( currentInputs ) :
+        if s[ currentSnippet ]().validateInputs( currentInputs ) :
             xml=xmlgenerator.getxml( xml, s[ currentSnippet ], currentInputs, snipID, inputID-len( inputsToBeGot ) )
             print xml
 
@@ -42,6 +42,9 @@ def main() :
                 print 'Error while generating XML ... Will Quit'
                 sys.exit(1)
 
+        else :
+            inputID -= len( inputsToBeGot )
+            print 'WRONG'*10
         print '-'*50            
         choice=int( raw_input( '... ' ) )
         snipID+=1

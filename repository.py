@@ -10,6 +10,10 @@ import Image # Resize Image needs this.
 import urllib2 # download_pictures needs this
 from BeautifulSoup import BeautifulSoup # download_pictures needs this
 import pexpect # Mount image needs this
+import smtplib                                 # Send email needs This 
+from email.mime.image import MIMEImage         # Send email needs This 
+from email.mime.text import MIMEText           # Send email needs This 
+from email.mime.multipart import MIMEMultipart # Send email needs This     
 
 Snippet = tasks.Snippet
 
@@ -202,3 +206,40 @@ class mount_disc_image( Snippet ) :
 allSnippets[ mount_disc_image.sname ] = mount_disc_image
 
 # ---------------------------------------------------------------
+
+class add_song_to_playlist( Snippet ) :
+    name = 'Add a song to a playlist'
+    sname = 'ADD_SONG_TO_PLAYLIST'
+    ID = 7
+    details = [ 'Path to song', 'Path to playlist' ]
+    tags = [ 'song', 'playlist' ]
+    defaults = [ '/dev/null', '/dev/null' ]
+    errors = [ '', '' ]
+
+    def validateInputs( self, inputs ) :
+        return os.access( inputs[0], os.F_OK ) and os.access( '/'.join( inputs[1].split('/')[:-1] ), os.W_OK )
+
+    def doJob( self, inputs ) :
+        os.system( 'echo %s >> %s'%tuple( inputs ) )
+
+allSnippets[ add_song_to_playlist.sname ] = add_song_to_playlist
+
+# ---------------------------------------------------------------
+
+class send_email( Snippet ) :
+    name = 'Email a text message along with one attachment'
+    sname = 'SEND_EMAIL'
+    ID = 8
+    details = [ 'Subject', 'From', 'To', 'Attachment' ]
+    tags = [ 'subject', 'from', 'to', 'attachment' ]
+    defaults = [ 'A Message', 'localhost@locahost', 'localhost@localhost', '' ]
+    errors = [ '', '', '', '' ]
+
+    def validateInputs( self, inputs ) :
+        return True
+
+    def doJob( self, inputs ) :
+        pass
+    #    I am stuck because my present code doesn't handle unlimited inputs
+    #    well. Specifically, there is no way of crosslinking with inputs of
+    #    non-predetermined length.
