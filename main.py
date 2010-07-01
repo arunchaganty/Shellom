@@ -9,6 +9,10 @@ sys.dont_write_bytecode = True
 import os, tasks, xmlgenerator, xmlcompiler, repository
 
 def main() :
+    print '''Enter a snippet number to begin.
+    To end, enter a negative snippet number.
+    Please use absolute paths everywhere.'''
+
     s=repository.allSnippets
     print '-'*50
 
@@ -34,7 +38,7 @@ def main() :
         print currentInputs
 
         # Input validation also has to be done !!
-        if s[ currentSnippet ]().validateInputs( currentInputs ) :
+        if True :#s[ currentSnippet ]().validateInputs( currentInputs ) :
             xml=xmlgenerator.getxml( xml, s[ currentSnippet ], currentInputs, snipID, inputID-len( inputsToBeGot ) )
             print xml
 

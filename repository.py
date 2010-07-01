@@ -33,7 +33,7 @@ allSnippets = {}
 #         return True
 # 
 #     def __init__(self) :
-#         pass
+#         passtoMain.append( '%s().doJob(%s)'%( str( repository.allSnippets[ str( c.name ).upper() ] )[11:], io ) )
 # 
 # allSnippets[A.sname] = A
 
@@ -69,8 +69,8 @@ class text2wave( Snippet ) :
     errors = [ '', '' ]
 
     def validateInputs( self,inputs ) :
-        return True
-        #return os.access( inputs[ 1 ] , os.F_OK ) and not os.access( inputs[ 1 ], os.W_OK )
+        #return True
+        return  ( not os.access( inputs[ 1 ] , os.F_OK ) ) or os.access( inputs[ 1 ], os.W_OK )
 
     def doJob( self, inputs ) :
         os.system( 'text2wave < "%s" > "%s"'%( inputs[ 0 ], inputs[ 1 ] ) )
@@ -222,10 +222,12 @@ class add_song_to_playlist( Snippet ) :
 
     def validateInputs( self, inputs ) :
         return True
-        return os.access( inputs[0], os.F_OK ) and os.access( '/'.join( inputs[1].split('/')[:-1] ), os.W_OK )
+        #return os.access( os.path.abspath( inputs[0] ), os.F_OK ) #and os.access( '/'.join( inputs[1].split('/')[:-1] ), os.W_OK )
 
     def doJob( self, inputs ) :
-        os.system( 'echo %s >> %s'%tuple( inputs ) )
+        print 'echo %s >> %s'%( inputs[0], inputs[1] ) 
+        os.system( 'pwd' )
+        os.system( 'echo %s >> %s'%( inputs[0], inputs[1] ) )
 
 allSnippets[ add_song_to_playlist.sname ] = add_song_to_playlist
 
@@ -241,7 +243,7 @@ class send_email( Snippet ) :
     errors = [ '', '', '', '', '' ]
 
     def validateInputs( self, inputs ) :
-        return True
+        #return True
         return os.access( inputs[3], os.R_OK ) #and ( inputs[4] == '' or os.access( inputs[4]. os.R_OK ) )
 
     def doJob( self, inputs ) :

@@ -32,6 +32,7 @@ def compile( xmlFileName,workflow ) :
     for c in temp :
         io=c.findAll()
         io=[str( i.string ) for i in io]
+        toMain.append( 'if not %s().validateInputs(%s) :\n\tprint "Error in %s !"\n\tsys.exit( -1 )'%( str( repository.allSnippets[ str( c.name ).upper() ] )[11:], io, str( repository.allSnippets[ str( c.name ).upper() ] )[11:] ) )
         toMain.append( '%s().doJob(%s)'%( str( repository.allSnippets[ str( c.name ).upper() ] )[11:], io ) )
         
     wf=open( workflow,'w' )
