@@ -21,16 +21,21 @@ def compile( xmlFileName,workflow ) :
     xmlFile.close()
     soup=BeautifulStoneSoup(xml)
 
-    toMain=['import repository']
+    toMain=['import sys\nsys.dont_write_bytecode = False\nsys.path.append("..")\nfrom repository import *']
 
     s=soup.workflow.findChild()
+    if not s :
+        print 'No snippets selected !'
+        sys.exit( 1 )
     temp=[s]
     temp.extend( s.findNextSiblings() )
     for c in temp :
         io=c.findAll()
         io=[str( i.string ) for i in io]
-        toMain.append( '%s.doJob(%s)'%( repository.allSnippets[ str( c.name ).upper() ], io ) )
+        toMain.append( 'if not %s().validateInputs(%s) :\n\tprint "Error in %s !"\n\tsys.exit( -1 )'%( str( repository.allSnippets[ str( c.name ).upper() ] )[11:], io, str( repository.allSnippets[ str( c.name ).upper() ] )[11:] ) )
+        toMain.append( '%s().doJob(%s)'%( str( repository.allSnippets[ str( c.name ).upper() ] )[11:], io ) )
         
     wf=open( workflow,'w' )
     wf.write( '\n'.join( toMain ) )
+    wf.write( '\nimport os\nos.system( "rm repository.py" )\n' )
     wf.close()
