@@ -14,6 +14,7 @@ import smtplib                                 # Send email needs This
 from email.mime.image import MIMEImage         # Send email needs This 
 from email.mime.text import MIMEText           # Send email needs This 
 from email.mime.multipart import MIMEMultipart # Send email needs This     
+import wordpresslib # Publish wordpress post needs this
 
 Snippet = tasks.Snippet
 
@@ -48,7 +49,8 @@ class clip2file( Snippet ) :
     errors = [ '' ]
 
     def validateInputs( self,inputs ) :
-        return os.access( inputs[ 0 ] , os.F_OK ) and not os.access( inputs[ 0 ], os.W_OK )
+        return True
+        #return os.access( inputs[ 0 ] , os.F_OK ) and not os.access( inputs[ 0 ], os.W_OK )
 
     def doJob( self, inputs ) :
         os.system( 'xclip -o -selection clipboard >> %s'%( inputs[ 0 ] ) )
@@ -67,7 +69,8 @@ class text2wave( Snippet ) :
     errors = [ '', '' ]
 
     def validateInputs( self,inputs ) :
-        return os.access( inputs[ 1 ] , os.F_OK ) and not os.access( inputs[ 1 ], os.W_OK )
+        return True
+        #return os.access( inputs[ 1 ] , os.F_OK ) and not os.access( inputs[ 1 ], os.W_OK )
 
     def doJob( self, inputs ) :
         os.system( 'text2wave < "%s" > "%s"'%( inputs[ 0 ], inputs[ 1 ] ) )
@@ -86,6 +89,7 @@ class resize_image( Snippet ) :
     errors = [ 'Input image not found', 'Wrong resize factor format. Type, for example as 64% or 640x480.', '' ]
 
     def validateInputs( self, inputs ) :
+        return True
         err=[]
         if not os.access( inputs[0], os.R_OK ) :
             err.append( 0 )
@@ -104,11 +108,11 @@ class resize_image( Snippet ) :
         elif re.match('^\d+x\d+$', inputs[1] ) :
             cmd = inputs[1]
         
-        it=self.validateInputs( inputs )
-        if it :
-            print it
-        else :
-            os.system( 'convert %s -resize %s %s'%( inputs[0], cmd, inputs[2] ) )
+        #it=self.validateInputs( inputs )
+        #if it :
+        #    print it
+        #else :
+        os.system( 'convert %s -resize %s %s'%( inputs[0], cmd, inputs[2] ) )
 
 allSnippets[ resize_image.sname ] = resize_image
 
@@ -217,6 +221,7 @@ class add_song_to_playlist( Snippet ) :
     errors = [ '', '' ]
 
     def validateInputs( self, inputs ) :
+        return True
         return os.access( inputs[0], os.F_OK ) and os.access( '/'.join( inputs[1].split('/')[:-1] ), os.W_OK )
 
     def doJob( self, inputs ) :
@@ -230,16 +235,84 @@ class send_email( Snippet ) :
     name = 'Email a text message along with one attachment'
     sname = 'SEND_EMAIL'
     ID = 8
-    details = [ 'Subject', 'From', 'To', 'Attachment' ]
-    tags = [ 'subject', 'from', 'to', 'attachment' ]
-    defaults = [ 'A Message', 'localhost@locahost', 'localhost@localhost', '' ]
-    errors = [ '', '', '', '' ]
+    details = [ 'Subject', 'From', 'To ( a comma-space separated list )', 'Path to message', 'Path to attachment' ]
+    tags = [ 'subject', 'from', 'to','message', 'attachment' ]
+    defaults = [ 'A Message', 'localhost@locahost', 'localhost@localhost','/dev/null', '' ]
+    errors = [ '', '', '', '', '' ]
+
+    def validateInputs( self, inputs ) :
+        return True
+        return os.access( inputs[3], os.R_OK ) #and ( inputs[4] == '' or os.access( inputs[4]. os.R_OK ) )
+
+    def doJob( self, inputs ) :
+        msgText = open( inputs[3], 'rb' )
+        msg = MIMEMultipart()
+        # msg.preamble = msgText.read()
+        msg.attach( MIMEText( msgText.read() ) )
+        msgText.close()
+
+        msg[ 'Subject' ] = inputs[0]
+        msg[ 'From' ] = inputs[1]
+        msg[ 'To' ] = ', '.join( [ x.strip() for x in inputs[2].split(',') ] )
+
+        if inputs[4].strip() != '' :
+            attachment = open( inputs[4], 'rb' )
+            img = MIMEImage( attachment.read() )
+            attachment.close()
+            msg.attach( img )
+
+        s = smtplib.SMTP()
+        s.connect()
+        s.sendmail( msg[ 'From' ], msg[ 'To' ].split( ', '), msg.as_string() )
+        s.quit()
+
+allSnippets[ send_email.sname ] = send_email
+
+# ---------------------------------------------------------------
+
+    #    I am stuck because my present code doesn't handle unlimited inputs
+    #    well. Specifically, there is no way of crosslinking with inputs of
+    #    non-predetermined length.
+    
+class publish_wordpress_post( Snippet ) :
+    name = 'Publish a wordpress blog post'
+    sname = 'PUBLISH_WORDPRESS_POST'
+    ID = 9
+    details = [ 'Blog url', 'Username', 'Password', 'Subject', 'Path to Description', 'Media ( optional )' ]
+    tags = [ 'blog', 'username', 'password', 'subject', 'description', 'media' ]
+    defaults = [ '', '', '', 'A subject', 'Some words', '' ]
+    errors = [ 'Blog fault', 'Username fault', 'Password fault', '', '', '' ]
 
     def validateInputs( self, inputs ) :
         return True
 
     def doJob( self, inputs ) :
-        pass
-    #    I am stuck because my present code doesn't handle unlimited inputs
-    #    well. Specifically, there is no way of crosslinking with inputs of
-    #    non-predetermined length.
+        if inputs[0][-1] != '/' :
+            inputs[0] = inputs[0] + '/'
+            
+        wp = wordpresslib.WordPressClient( inputs[0]+'xmlrpc.php', inputs[1], inputs[2] )
+        wp.selectBlog( 0 )
+        
+        if inputs[-1] != '' :
+            img = wp.newMediaObject( inputs[-1] )
+
+        post = wordpresslib.WordPressPost()
+        post.title = inputs[3]
+        des = open( inputs[4], 'r' )
+        post.description = ''
+
+        if inputs[-1] :
+            post.description = '<img src = "%s" /> <br/>'% img
+
+        post.description += des.read()
+        des.close()
+        
+        try :
+            newPost = wp.newPost( post, True )
+
+        except BaseException :
+            print 'An error occured while accessing your blog'
+
+allSnippets[ publish_wordpress_post.sname ] = publish_wordpress_post
+
+# ---------------------------------------------------------------

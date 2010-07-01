@@ -50,7 +50,7 @@ def getxml( xml, snippet, inputs, snip, inp ) :
         else :
             iORo = 'i'
        
-        if inn[0] != '~' :
+        if len( inn ) == 0 or inn[0] != '~' :
             xml.append( '<%s id="%s%d">%s</%s>\n'%( snippet.tags[i], iORo, inp, inputs[i], snippet.tags[i] ) )
             inp += 1
         else :
