@@ -6,17 +6,17 @@
 
 import sys
 sys.dont_write_bytecode = True
-import os, tasks, xmlgenerator, xmlcompiler, repository
+import os, tasks, xmlgenerator, xmlcompiler, snippets
 
 def main() :
     print '''Enter a snippet number to begin.
     To end, enter a negative snippet number.
     Please use absolute paths everywhere.'''
 
-    s=repository.allSnippets
+    s = filter( lambda x: x[0] != '_' and x != 'os' and x != 'sys' and x != 'module', dir( snippets ) )
     print '-'*50
 
-    oSnip=zip( range( len( s ) ), s.keys() )
+    oSnip=zip( range( len( s ) ), s )
     soSnip=map( str,oSnip )
     
     print '\n'.join( soSnip )
@@ -27,19 +27,19 @@ def main() :
 
     while choice>=0 :
 
-        currentSnippet=oSnip[ choice ][ 1 ]
-        inputsToBeGot=s[ currentSnippet  ].tags
+        currentSnippet=getattr( getattr( snippets, oSnip[ choice ][1] ), oSnip[ choice ][1] )
+        inputsToBeGot=currentSnippet.tags
         currentInputs=[]
 
         for i in range( len( inputsToBeGot ) ) :
-            currentInputs.append( raw_input( '%d - %s ... '%( inputID, s[ currentSnippet ].details[i] ) ) )
+            currentInputs.append( raw_input( '%d - %s ... '%( inputID, currentSnippet.details[i] ) ) )
             inputID+=1
 
         print currentInputs
 
         # Input validation also has to be done !!
         if True :#s[ currentSnippet ]().validateInputs( currentInputs ) :
-            xml=xmlgenerator.getxml( xml, s[ currentSnippet ], currentInputs, snipID, inputID-len( inputsToBeGot ) )
+            xml=xmlgenerator.getxml( xml, currentSnippet, currentInputs, snipID, inputID-len( inputsToBeGot ) )
             print xml
 
             if xml==list('ERROR') :

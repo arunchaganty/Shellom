@@ -7,7 +7,6 @@
 
 from BeautifulSoup import BeautifulStoneSoup
 import sys
-import repository
 
 def compile( xmlFileName,workflow ) :
     """Compiles an XML file into python code for the workflow."""
@@ -21,21 +20,22 @@ def compile( xmlFileName,workflow ) :
     xmlFile.close()
     soup=BeautifulStoneSoup(xml)
 
-    toMain=['import sys\nsys.dont_write_bytecode = False\nsys.path.append("..")\nfrom repository import *']
+    toMain=['import sys\nsys.dont_write_bytecode = False\nsys.path.append("..")\nimport snippets']
 
-    s=soup.workflow.findChild()
+    s=soup.findAll( 'snippet' )
     if not s :
         print 'No snippets selected !'
         sys.exit( 1 )
-    temp=[s]
-    temp.extend( s.findNextSiblings() )
-    for c in temp :
-        io=c.findAll()
-        io=[str( i.string ) for i in io]
-        toMain.append( 'if not %s().validateInputs(%s) :\n\tprint "Error in %s !"\n\tsys.exit( -1 )'%( str( repository.allSnippets[ str( c.name ).upper() ] )[11:], io, str( repository.allSnippets[ str( c.name ).upper() ] )[11:] ) )
-        toMain.append( '%s().doJob(%s)'%( str( repository.allSnippets[ str( c.name ).upper() ] )[11:], io ) )
+
+    for c in s :
+        io=c.findAll( 'field' )
+        io = map( lambda x: x.string, io )
+        #io=[ i.string for i in io]
+        print io
+        name = c[ 'task' ]
+        toMain.append( 'if not snippets.%s.%s().validateInputs(%s) :\n\tprint "Error in %s !"\n\tsys.exit( -1 )'%( name, name, io, name ) )
+        toMain.append( 'snippets.%s.%s().doJob(%s)'%( name, name, io ) )
         
     wf=open( workflow,'w' )
     wf.write( '\n'.join( toMain ) )
-    wf.write( '\nimport os\nos.system( "rm repository.py" )\n' )
     wf.close()

@@ -23,7 +23,7 @@ def aux( oldid, soup ) :
         return 'ERROR'
 
     if prev[0] != '~' :
-        return prev
+        return prev.strip()
 
 
 def getxml( xml, snippet, inputs, snip, inp ) :
@@ -40,7 +40,7 @@ def getxml( xml, snippet, inputs, snip, inp ) :
         if inputs[i] == '' :
             inputs[i] = ' ' + snippet.defaults[i]
 
-    xml.append( '<%s snipID="%d" id="s%d">\n'%( snippet.sname, snippet.ID, snip ) )
+    xml.append( '<snippet task="%s" snipID="%d" id="s%d">\n'%( snippet.sname, snippet.ID, snip ) )
     
     for i in range( len( inputs ) ) :
         inn=inputs[i].strip()
@@ -51,18 +51,18 @@ def getxml( xml, snippet, inputs, snip, inp ) :
             iORo = 'i'
        
         if len( inn ) == 0 or inn[0] != '~' :
-            xml.append( '<%s id="%s%d">%s</%s>\n'%( snippet.tags[i], iORo, inp, inputs[i], snippet.tags[i] ) )
+            xml.append( '<field task="%s" id="%s%d">%s</field>\n'%( snippet.tags[i], iORo, inp, inputs[i] ) )
             inp += 1
         else :
             soup = BeautifulStoneSoup( ''.join( xml ) )
         
-            toBeAppended =  aux( inn[1:], soup )
+            toBeAppended =  str( aux( inn[1:], soup ) )
 
             if toBeAppended == 'ERROR' :
                 return list('ERROR')
             else :
-                xml.append( '<%s id="%s%d">%s</%s>\n'%( snippet.tags[i], iORo, inp, toBeAppended, snippet.tags[i] ) )
+                xml.append( '<field task="%s" id="%s%d">%s</field>\n'%( snippet.tags[i], iORo, inp, toBeAppended) )
                 inp += 1
 
-    xml.append( '</%s>'%( snippet.sname  )  )
+    xml.append( '</snippet>'  )
     return  xml
