@@ -7,8 +7,6 @@
 
 import os
 
-repo=open('repository.py','a')
-
 class Snippet :   
 
     name=''
