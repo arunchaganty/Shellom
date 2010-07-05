@@ -41,8 +41,8 @@ def getxml( xml, snippet, inputs, snip, inp ) :
     for i in range( 1, len( inputs ) ) :
         if inputs[i] == '' :
             inputs[i] = ' ' + snippet.defaults[i]
-        if snippet[i].tags in [ 'path:r', 'path:w' ] :
-            inputs[i] = os.path.abspath( inputs[i] )
+        if snippet.types[i] in [ 'path:r', 'path:w' ] and inputs[i][0] != '/':
+            inputs[i] = os.getcwd()+'/'+inputs[i]
 
     xml.append( '<snippet task="%s" snipID="%d" id="s%d">\n'%( snippet.sname, snippet.ID, snip ) )
     
@@ -71,7 +71,7 @@ def getxml( xml, snippet, inputs, snip, inp ) :
                 #xml.append( '<field task="%s" id="%s%d">%s</field>\n'%( snippet.tags[i], iORo, inp, toBeAppended) )
         if snippet.types[i] != '' and inputs[i] != '' :
             if not validators.validator( snippet.types[i], soup, toBeAppended ) :
-                return list( 'ERROR_INVALID_INPUT:%s'%snippet.tags[i] )
+                return list( 'ERROR_INVALID_INPUT:%s\n%s'%( snippet.tags[i], toBeAppended ) )
 
         xml.append( '<field task="%s" id="%s%d">%s</field>\n'%( snippet.tags[i], iORo, inp, toBeAppended ) )
         inp += 1
