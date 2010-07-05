@@ -12,7 +12,9 @@
 # about the assumption and change accordingly.
 
 from tasks import *
+import os
 from BeautifulSoup import BeautifulStoneSoup
+import validators
 
 def aux( oldid, soup ) :
     """Recursively find a previous input or output from an XML soup."""
@@ -20,7 +22,7 @@ def aux( oldid, soup ) :
     prev=soup.find( id=oldid ).string.strip()
 
     if len(prev) == 0 :
-        return 'ERROR'
+        return 'ERROR_INTERLEAVING'
 
     if prev[0] != '~' :
         return prev.strip()
@@ -34,35 +36,45 @@ def getxml( xml, snippet, inputs, snip, inp ) :
     
     
     if len( inputs ) != len( snippet.tags ) :
-        return list('ERROR')
+        return list('ERROR_TOO_FEW_INPUTS')
     
     for i in range( 1, len( inputs ) ) :
         if inputs[i] == '' :
             inputs[i] = ' ' + snippet.defaults[i]
+        if snippet[i].tags in [ 'path:r', 'path:w' ] :
+            inputs[i] = os.path.abspath( inputs[i] )
 
     xml.append( '<snippet task="%s" snipID="%d" id="s%d">\n'%( snippet.sname, snippet.ID, snip ) )
     
     for i in range( len( inputs ) ) :
         inn=inputs[i].strip()
+        soup = BeautifulStoneSoup( ''.join( xml ) )
 
+        
         if i == len( inputs )-1 :
             iORo = 'o'
         else :
             iORo = 'i'
        
         if len( inn ) == 0 or inn[0] != '~' :
-            xml.append( '<field task="%s" id="%s%d">%s</field>\n'%( snippet.tags[i], iORo, inp, inputs[i] ) )
-            inp += 1
+            toBeAppended = inputs[i]
+            #xml.append( '<field task="%s" id="%s%d">%s</field>\n'%( snippet.tags[i], iORo, inp, inputs[i] ) )
         else :
-            soup = BeautifulStoneSoup( ''.join( xml ) )
-        
-            toBeAppended =  str( aux( inn[1:], soup ) )
+            try :
+                toBeAppended =  str( aux( inn[1:], soup ) )
+            except BaseException :
+                return list( 'ERROR_INTERLEAVING' )
 
-            if toBeAppended == 'ERROR' :
-                return list('ERROR')
-            else :
-                xml.append( '<field task="%s" id="%s%d">%s</field>\n'%( snippet.tags[i], iORo, inp, toBeAppended) )
-                inp += 1
+            if toBeAppended == 'ERROR_INTERLEAVING' :
+                return list('ERROR_INTERLEAVING')
+            #else :
+                #xml.append( '<field task="%s" id="%s%d">%s</field>\n'%( snippet.tags[i], iORo, inp, toBeAppended) )
+        if snippet.types[i] != '' and inputs[i] != '' :
+            if not validators.validator( snippet.types[i], soup, toBeAppended ) :
+                return list( 'ERROR_INVALID_INPUT:%s'%snippet.tags[i] )
+
+        xml.append( '<field task="%s" id="%s%d">%s</field>\n'%( snippet.tags[i], iORo, inp, toBeAppended ) )
+        inp += 1
 
     xml.append( '</snippet>'  )
     return  xml

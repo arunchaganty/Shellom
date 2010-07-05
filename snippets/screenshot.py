@@ -8,6 +8,7 @@ class screenshot() :
     tags = [ 'delay', 'outfile' ]
     defaults = [ '0', 'screenshot'+str( random.randint( 1,10000 ) ) ]
     errors = [ '', '' ]
+    types = [ '', 'path:w' ]
 
     def __init__( self ) :
 	import random, re, os

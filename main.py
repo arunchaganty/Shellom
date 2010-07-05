@@ -25,6 +25,9 @@ def main() :
     inputID=1
     xml=[ '<workflow>' ]
 
+    if not os.access( 'tmp', os.W_OK ) :
+        os.mkdir( 'tmp' )
+
     while choice>=0 :
 
         currentSnippet=getattr( getattr( snippets, oSnip[ choice ][1] ), oSnip[ choice ][1] )
@@ -32,18 +35,20 @@ def main() :
         currentInputs=[]
 
         for i in range( len( inputsToBeGot ) ) :
-            currentInputs.append( raw_input( '%d - %s ... '%( inputID, currentSnippet.details[i] ) ) )
+            ioro = 'i'
+            if i == len( inputsToBeGot ) -1 :
+                ioro = 'o'
+            currentInputs.append( raw_input( '%s%d - %s ... '%( ioro, inputID, currentSnippet.details[i] ) ) )
             inputID+=1
 
-        print currentInputs
+        #print currentInputs
 
-        # Input validation also has to be done !!
         if True :#s[ currentSnippet ]().validateInputs( currentInputs ) :
             xml=xmlgenerator.getxml( xml, currentSnippet, currentInputs, snipID, inputID-len( inputsToBeGot ) )
-            print xml
+            # THIS IS WHAT YOU SHOULD BE UNCOMMENTING DURING DEBUG SESSIONSprint xml
 
-            if xml==list('ERROR') :
-                print 'Error while generating XML ... Will Quit'
+            if xml[:5]==list('ERROR') :
+                print ''.join(xml) #'Error while generating XML ... Will Quit'
                 sys.exit(1)
 
         else :
@@ -55,8 +60,6 @@ def main() :
 
     xml.append( '</workflow>' )
     
-    if not os.access( 'tmp', os.W_OK ) :
-        os.mkdir( 'tmp' )
     xmlFile=open( 'tmp/workflow.xml', 'w' )
     xmlFile.write( ''.join( xml ) )
     xmlFile.close()

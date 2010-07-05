@@ -8,6 +8,7 @@ class text2wav() :
     tags = [ 'infile', 'outfile' ]
     defaults = [ '/dev/null', 'text2wave'+str( random.randint( 1,10000 ) ) ]
     errors = [ '', '' ]
+    types = [ 'path:r', 'path:w' ]
 
     def __init__( self ) :
 	import random, os
