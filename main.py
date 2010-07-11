@@ -6,17 +6,17 @@
 
 import sys
 sys.dont_write_bytecode = True
-import os, tasks, xmlgenerator, xmlcompiler, repository
+import os, tasks, xmlgenerator, xmlcompiler, snippets
 
 def main() :
     print '''Enter a snippet number to begin.
     To end, enter a negative snippet number.
     Please use absolute paths everywhere.'''
 
-    s=repository.allSnippets
+    s = filter( lambda x: x[0] != '_' and x != 'os' and x != 'sys' and x != 'module', dir( snippets ) )
     print '-'*50
 
-    oSnip=zip( range( len( s ) ), s.keys() )
+    oSnip=zip( range( len( s ) ), s )
     soSnip=map( str,oSnip )
     
     print '\n'.join( soSnip )
@@ -25,25 +25,30 @@ def main() :
     inputID=1
     xml=[ '<workflow>' ]
 
+    if not os.access( 'tmp', os.W_OK ) :
+        os.mkdir( 'tmp' )
+
     while choice>=0 :
 
-        currentSnippet=oSnip[ choice ][ 1 ]
-        inputsToBeGot=s[ currentSnippet  ].tags
+        currentSnippet=getattr( getattr( snippets, oSnip[ choice ][1] ), oSnip[ choice ][1] )
+        inputsToBeGot=currentSnippet.tags
         currentInputs=[]
 
         for i in range( len( inputsToBeGot ) ) :
-            currentInputs.append( raw_input( '%d - %s ... '%( inputID, s[ currentSnippet ].details[i] ) ) )
+            ioro = 'i'
+            if i == len( inputsToBeGot ) -1 :
+                ioro = 'o'
+            currentInputs.append( raw_input( '%s%d - %s ... '%( ioro, inputID, currentSnippet.details[i] ) ) )
             inputID+=1
 
-        print currentInputs
+        #print currentInputs
 
-        # Input validation also has to be done !!
         if True :#s[ currentSnippet ]().validateInputs( currentInputs ) :
-            xml=xmlgenerator.getxml( xml, s[ currentSnippet ], currentInputs, snipID, inputID-len( inputsToBeGot ) )
-            print xml
+            xml=xmlgenerator.getxml( xml, currentSnippet, currentInputs, snipID, inputID-len( inputsToBeGot ) )
+            # THIS IS WHAT YOU SHOULD BE UNCOMMENTING DURING DEBUG SESSIONSprint xml
 
-            if xml==list('ERROR') :
-                print 'Error while generating XML ... Will Quit'
+            if xml[:5]==list('ERROR') :
+                print ''.join(xml) #'Error while generating XML ... Will Quit'
                 sys.exit(1)
 
         else :
@@ -55,8 +60,6 @@ def main() :
 
     xml.append( '</workflow>' )
     
-    if not os.access( 'tmp', os.W_OK ) :
-        os.mkdir( 'tmp' )
     xmlFile=open( 'tmp/workflow.xml', 'w' )
     xmlFile.write( ''.join( xml ) )
     xmlFile.close()
