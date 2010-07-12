@@ -6,7 +6,7 @@
 
 import sys
 sys.dont_write_bytecode = True
-import os, tasks, xmlgenerator, xmlcompiler, snippets
+import os, tasks, xmlgenerator, xmlcompiler, snippets, subprocess
 
 def main() :
     print '''Enter a snippet number to begin.
@@ -33,6 +33,11 @@ def main() :
         currentSnippet=getattr( getattr( snippets, oSnip[ choice ][1] ), oSnip[ choice ][1] )
         inputsToBeGot=currentSnippet.tags
         currentInputs=[]
+
+        for i in currentSnippet.packages :
+            if( os.system( "dpkg -l | awk '{ print $2 }' | tail -n +6 | grep %s > /dev/null"%i ) != 0 ) :
+                print i + ' missing. Install the package before using this snippet.'
+                sys.exit( -1 )
 
         for i in range( len( inputsToBeGot ) ) :
             ioro = 'i'

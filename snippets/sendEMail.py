@@ -12,6 +12,7 @@ class sendEMail() :
     defaults = [ 'A Message', 'localhost@locahost', 'localhost@localhost','/dev/null', '' ]
     errors = [ '', '', '', '', '' ]
     types = [ '', '', '', 'path:r', '' ]
+    packages = [ 'sendmail' ]
 
     def __init__( self ) :
 	import smtplib, os

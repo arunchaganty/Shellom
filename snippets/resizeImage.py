@@ -10,6 +10,7 @@ class resizeImage() :
     defaults = [ '/dev/null', '100%', 'resize'+str( random.randint( 1,10000 ) ) ]
     errors = [ 'Input image not found', 'Wrong resize factor format. Type, for example as 64% or 640x480.', '' ]
     types = [ 'path:r', '', 'path:w' ]
+    packages = [ 'imagemagick' ]
 
     def __init__( self ) :
 	import tasks, os, random, re

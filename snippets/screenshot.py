@@ -9,6 +9,7 @@ class screenshot() :
     defaults = [ '0', 'screenshot'+str( random.randint( 1,10000 ) ) ]
     errors = [ '', '' ]
     types = [ '', 'path:w' ]
+    packages = [ 'imagemagick' ]
 
     def __init__( self ) :
 	import random, re, os

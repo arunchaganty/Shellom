@@ -10,6 +10,7 @@ class downloadPictures() :
     defaults = [ 'http://www.google.com/', 'download_pictures'+str( random.randint( 1,10000 ) ) ]
     errors = [ '', '' ]
     types = [ '', '' ]
+    packages = []
 
     def __init__( self ) :
 	import urllib2, random, os

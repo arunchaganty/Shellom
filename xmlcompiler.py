@@ -6,7 +6,7 @@
 # code.
 
 from BeautifulSoup import BeautifulStoneSoup
-import sys
+import sys, os
 
 def compile( xmlFileName,workflow ) :
     """Compiles an XML file into python code for the workflow."""
@@ -41,3 +41,4 @@ def compile( xmlFileName,workflow ) :
     wf=open( workflow,'w' )
     wf.write( '\n'.join( toMain ) )
     wf.close()
+    os.system( 'chmod +x '+ workflow )

@@ -9,6 +9,7 @@ class clip2file() :
     defaults = [ 'clip2file'+str( random.randint( 1,10000 ) ) ]
     errors = [ '' ]
     types = [ 'path:w' ]
+    packages = [ 'xclip' ]
 
     def __init__( self ) :
 	import random, os	

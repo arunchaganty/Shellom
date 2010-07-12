@@ -9,6 +9,7 @@ class mountDiscImage() :
     defaults = [ '', '/media/mount_image'+str( random.randint( 1,10000 ) ), '', 'n' ]
     errors = [ 'No image found', '', 'Wrong or no root password given', '' ]
     types = [ 'path:r', '', '', '' ]
+    packages = []
 
     def __init__( self ) :
 	import pexpect, random, os

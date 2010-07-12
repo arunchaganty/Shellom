@@ -40,7 +40,7 @@ def getxml( xml, snippet, inputs, snip, inp ) :
     
     for i in range( len( inputs ) ) :
         if inputs[i] == '' :
-            inputs[i] = ' ' + snippet.defaults[i]
+            inputs[i] = snippet.defaults[i]
         if snippet.types[i] in [ 'path:r', 'path:w' ] and ( inputs[i][0] not in [ '/', '~' ] ):
             inputs[i] = os.getcwd()+'/'+inputs[i]#os.path.abspath( inputs[i] )
 

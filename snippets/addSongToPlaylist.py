@@ -9,6 +9,7 @@ class addSongToPlaylist() :
     defaults = [ '/dev/null', '/dev/null' ]
     errors = [ '', '' ]
     types = [ 'path:r', 'path:w' ]
+    packages = []
 
     def __init__( self ) :
         import os
