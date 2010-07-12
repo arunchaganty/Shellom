@@ -19,6 +19,6 @@ class clip2file() :
         #return os.access( inputs[ 0 ] , os.F_OK ) and not os.access( inputs[ 0 ], os.W_OK )
 
     def doJob( self, inputs ) :
-        os.system( 'xclip -o -selection clipboard >> %s'%( inputs[ 0 ] ) )
+        os.system( 'xclip -o -selection clipboard >> "%s"'%( inputs[ 0 ] ) )
 
 #allSnippets[ clip2file.sname ] = clip2file

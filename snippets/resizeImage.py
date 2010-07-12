@@ -40,6 +40,6 @@ class resizeImage() :
         #if it :
         #    print it
         #else :
-        os.system( 'convert %s -resize %s %s'%( inputs[0], cmd, inputs[2] ) )
+        os.system( 'convert "%s" -resize %s "%s"'%( inputs[0], cmd, inputs[2] ) )
 
 #allSnippets[ resize_image.sname ] = resize_image

@@ -42,9 +42,9 @@ def compile( xmlFileName,workflow ) :
 
         print io
         name = c[ 'task' ]
-        toMain.append( 'curSnip = snippets.%s.%s()'%( name, name ) )
-        toMain.append( "inList = %s"%io )
-        toMain.append( "doIt( curSnip, inList )" )
+        #toMain.append( 'curSnip = snippets.%s.%s()'%( name, name ) )
+        #toMain.append( "inList = %s"%io )
+        toMain.append( "doIt( snippets.%s.%s(), %s )"%( name, name, io) )
         #toMain.append( "inList = %s\nfor i in range( len( inList ) ) :\n\tif curSnip.types[i] == 'path:r' :\n\t\tif not os.access( inList[i], os.R_OK ) :\n\t\t\tprint 'Error reading some input files due to malfunction of a previous snippet. Exiting ...'\n\t\t\tsys.exit( -1 )"%( io ) )
         #toMain.append( 'if not curSnip.validateInputs(%s) :\n\tprint "Error in %s !"\n\tsys.exit( -1 )'%( io, name ) )
         #toMain.append( 'curSnip.doJob(inList)\n#-------------------------------------------\n' )

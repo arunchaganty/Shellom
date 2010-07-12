@@ -33,7 +33,7 @@ class mountDiscImage() :
             else :
                 imgType = ''
             #-----------------------------------------
-            command = 'sudo mount %s %s %s'%( imgType, inputs[0], inputs[1] )
+            command = 'sudo mount %s "%s" "%s"'%( imgType, inputs[0], inputs[1] )
 
         if flag and not os.access( inputs[1], os.F_OK ) :  # Create mount point if it doesn't exist
             os.mkdir( inputs[1] )

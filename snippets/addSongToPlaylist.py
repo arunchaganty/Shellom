@@ -19,8 +19,7 @@ class addSongToPlaylist() :
         #return os.access( os.path.abspath( inputs[0] ), os.F_OK ) #and os.access( '/'.join( inputs[1].split('/')[:-1] ), os.W_OK )
 
     def doJob( self, inputs ) :
-        print 'echo %s >> %s'%( inputs[0], inputs[1] ) 
         os.system( 'pwd' )
-        os.system( 'echo %s >> %s'%( inputs[0], inputs[1] ) )
+        os.system( 'echo "%s" >> "%s"'%( inputs[0], inputs[1] ) )
 
 #allSnippets[ add_song_to_playlist.sname ] = add_song_to_playlist

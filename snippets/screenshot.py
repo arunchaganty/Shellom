@@ -18,9 +18,6 @@ class screenshot() :
         return re.match('^\d+$',inputs[0] )
 
     def doJob( self, inputs ) :
-        if self.validateInputs( inputs ) :
-            os.system( 'sleep %s; import -window root %s'%( inputs[0], inputs[1] ) )
-        else :
-            print 'Error'
+        os.system( 'sleep %s; import -window root "%s"'%( inputs[0], inputs[1] ) )
 
 #allSnippets[ screenshot.sname ] = screenshot
