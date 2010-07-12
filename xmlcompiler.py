@@ -20,7 +20,7 @@ def compile( xmlFileName,workflow ) :
     xmlFile.close()
     soup=BeautifulStoneSoup(xml)
 
-    toMain=['import sys, os\nsys.dont_write_bytecode = False\nsys.path.append("..")\nimport snippets']
+    toMain=['#! /usr/bin/env python\nimport sys, os\nsys.dont_write_bytecode = False\nsys.path.append("..")\nimport snippets']
 
     s=soup.findAll( 'snippet' )
     if not s :
