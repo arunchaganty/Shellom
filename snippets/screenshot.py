@@ -10,7 +10,7 @@ class screenshot() :
     ID = 4
     details = [ 'Delay in seconds', 'Output image file' ]
     tags = [ 'delay', 'outfile' ]
-    defaults = [ '0', 'screenshot'+str( random.randint( 1,10000 ) ) ]
+    defaults = [ '0', 'screenshot'+str( random.randint( 1,10000 ) )+'.jpg' ]
     errors = [ '', '' ]
     types = [ '', 'path:w' ]
     packages = [ 'imagemagick' ]

@@ -12,7 +12,7 @@ class resizeImage() :
     ID = 3
     details = [ 'Input Image', 'Resize yyy% or yyyxyyy', 'Output file' ]
     tags = [ 'infile', 'factor', 'outfile' ]
-    defaults = [ '/dev/null', '100%', 'resize'+str( random.randint( 1,10000 ) ) ]
+    defaults = [ 'shot.jpg', '100%', 'resize'+str( random.randint( 1,10000 ) ) ]
     errors = [ 'Input image not found', 'Wrong resize factor format. Type, for example as 64% or 640x480.', '' ]
     types = [ 'path:r', '', 'path:w' ]
     packages = [ 'imagemagick' ]

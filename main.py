@@ -6,7 +6,7 @@
 
 import sys
 sys.dont_write_bytecode = True
-import os, tasks, xmlgenerator, xmlcompiler, snippets, subprocess
+import os, tasks, xmlgenerator, xmlcompiler, snippets, subprocess, random
 
 def main() :
     print '''Enter a snippet number to begin.
@@ -73,6 +73,9 @@ Relative paths are relative to the main Shellom directory, from where main.py ha
                 print 'Lists incompatible. Exiting ...'
                 sys.exit( -1 )
 
+        if len( lists ) > 0 and lists[-1] != len( inputsToBeGot ) -1 :
+            print 'The last input must be a list. Exiting.'
+            sys.exit( -1 )
         if lenLists != 0 :
             notLists = list( set( range( len( inputsToBeGot ) ) ).difference( set( lists ) ) )
             notLists.sort()
@@ -91,7 +94,6 @@ Relative paths are relative to the main Shellom directory, from where main.py ha
             xml = xmlgenerator.getxml( xml, currentSnippet, currentInputs, snipID, inputID )
         
 
-#        xml = xmlgenerator.getxml( xml, currentSnippet, currentInputs, snipID, inputID )
         inputID += len( inputsToBeGot ) + more
         print ( xml )
 
