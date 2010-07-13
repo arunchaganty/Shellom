@@ -1,4 +1,8 @@
-import os
+#import os
+try :
+    import os
+except ImportError :
+    print "Couldn't import os"
 
 class addSongToPlaylist() :
     name = 'Add a song to a playlist'
@@ -12,7 +16,10 @@ class addSongToPlaylist() :
     packages = []
 
     def __init__( self ) :
-        import os
+        try :
+            import os
+        except ImportError :
+            print "Couldn't import os"
 
     def validateInputs( self, inputs ) :
         return True

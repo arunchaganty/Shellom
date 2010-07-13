@@ -1,4 +1,8 @@
-import random, os
+#import random, os
+try :
+    import random, os	
+except ImportError :
+    print "Couldn't import either or both of os and random"
 
 class clip2file() :
     name = 'Paste the contents of the clipboard into a file'
@@ -12,7 +16,10 @@ class clip2file() :
     packages = [ 'xclip' ]
 
     def __init__( self ) :
-	import random, os	
+        try :
+        	import random, os	
+        except ImportError :
+            print "Couldn't import either or both of os and random"
 
     def validateInputs( self,inputs ) :
         return True

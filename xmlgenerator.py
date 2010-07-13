@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Author - Vikram Rao S
 # Date - 06-08-2010
 # Purpose - This module generates xml content for a given snippet and a list of inputs

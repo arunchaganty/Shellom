@@ -1,5 +1,10 @@
-import tasks, os, random, re
-import Image
+#import os, random, re
+#import Image 
+try :
+    import os, random, re
+    import Image
+except ImportError :
+    print "Couldn't import one or more of os, random, re and Image."
 
 class resizeImage() :
     name = 'Resize an image to a given percentage or size'
@@ -13,8 +18,11 @@ class resizeImage() :
     packages = [ 'imagemagick' ]
 
     def __init__( self ) :
-	import tasks, os, random, re
-	import Image
+        try :
+        	import os, random, re
+        	import Image
+        except ImportError :
+            print "Couldn't import one or more of os, random, re and Image."
 
     def validateInputs( self, inputs ) :
         return True

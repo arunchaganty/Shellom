@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Author - Vikram Rao S
 # Date - 02-07-10
 # Purpose - This module has functions for validating various types of inputs
