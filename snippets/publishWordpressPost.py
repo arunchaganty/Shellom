@@ -13,7 +13,7 @@ class publishWordpressPost() :
     defaults = [ '', '', '', 'A subject', 'Some words', '' ]
     errors = [ 'Blog fault', 'Username fault', 'Password fault', '', '', '' ]
     types = [ '', '', '', '', 'path:w', '' ]
-    packages = [ 'wordpresslib' ]
+    packages = [ ]
 
     def __init__( self ) :
         try :

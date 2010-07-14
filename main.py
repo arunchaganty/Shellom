@@ -21,7 +21,14 @@ Relative paths are relative to the main Shellom directory, from where main.py ha
     soSnip=map( str,oSnip )
     
     print '\n'.join( soSnip )
-    choice=int( raw_input( '... ' ) )
+
+    while 1 :
+        try :
+            choice=int( raw_input( '... ' ) )
+            break
+        except ValueError :
+            pass
+
     snipID=1
     inputID=1
     xml=[ '<workflow>' ]
@@ -89,7 +96,7 @@ Relative paths are relative to the main Shellom directory, from where main.py ha
                     thisInput[j] = currentInputs[j][i]
                 xml = xmlgenerator.getxml( xml, currentSnippet, thisInput, snipID, inputID )
                 inputID += len( inputsToBeGot )
-                snipID += 1
+#                snipID += 1
         else :
             xml = xmlgenerator.getxml( xml, currentSnippet, currentInputs, snipID, inputID )
         
@@ -101,8 +108,15 @@ Relative paths are relative to the main Shellom directory, from where main.py ha
             print ''.join(xml)
             sys.exit(1)
 
-        print '-'*50            
-        choice=int( raw_input( '... ' ) )
+        print '-'*50 
+        while 1 :
+            try :
+                choice=int( raw_input( '... ' ) )
+                snipID += 1
+                break
+            except ValueError :
+                pass           
+#        choice=int( raw_input( '... ' ) )
 #        snipID+=1
 
     xml.append( '</workflow>' )
