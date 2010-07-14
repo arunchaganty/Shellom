@@ -1,4 +1,8 @@
-import pexpect, random, os
+#import pexpect, random, os
+try :
+    import pexpect, random, os
+except ImportError :
+    print "Couldn't import one or more of pexpect, random and os."
 
 class mountDiscImage() :
     name = 'Mount an ISO or UDF disc image'
@@ -9,9 +13,13 @@ class mountDiscImage() :
     defaults = [ '', '/media/mount_image'+str( random.randint( 1,10000 ) ), '', 'n' ]
     errors = [ 'No image found', '', 'Wrong or no root password given', '' ]
     types = [ 'path:r', '', '', '' ]
+    packages = []
 
     def __init__( self ) :
-	import pexpect, random, os
+        try :
+    	    import pexpect, random, os
+        except ImportError :
+            print "Couldn't import one or more of pexpect, random and os."
 
     def validateInputs( self, inputs ) :
         return os.access( inputs[ 0 ], os.R_OK ) and not ( os.access( inputs[1], os.F_OK ) and not os.access( inputs[1], os.R_OK ) )
@@ -32,7 +40,7 @@ class mountDiscImage() :
             else :
                 imgType = ''
             #-----------------------------------------
-            command = 'sudo mount %s %s %s'%( imgType, inputs[0], inputs[1] )
+            command = 'sudo mount %s "%s" "%s"'%( imgType, inputs[0], inputs[1] )
 
         if flag and not os.access( inputs[1], os.F_OK ) :  # Create mount point if it doesn't exist
             os.mkdir( inputs[1] )

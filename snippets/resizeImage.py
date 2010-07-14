@@ -1,5 +1,10 @@
-import tasks, os, random, re
-import Image
+#import os, random, re
+#import Image 
+try :
+    import os, random, re
+    import Image
+except ImportError :
+    print "Couldn't import one or more of os, random, re and Image."
 
 class resizeImage() :
     name = 'Resize an image to a given percentage or size'
@@ -10,10 +15,14 @@ class resizeImage() :
     defaults = [ '/dev/null', '100%', 'resize'+str( random.randint( 1,10000 ) ) ]
     errors = [ 'Input image not found', 'Wrong resize factor format. Type, for example as 64% or 640x480.', '' ]
     types = [ 'path:r', '', 'path:w' ]
+    packages = [ 'imagemagick' ]
 
     def __init__( self ) :
-	import tasks, os, random, re
-	import Image
+        try :
+        	import os, random, re
+        	import Image
+        except ImportError :
+            print "Couldn't import one or more of os, random, re and Image."
 
     def validateInputs( self, inputs ) :
         return True
@@ -39,6 +48,6 @@ class resizeImage() :
         #if it :
         #    print it
         #else :
-        os.system( 'convert %s -resize %s %s'%( inputs[0], cmd, inputs[2] ) )
+        os.system( 'convert "%s" -resize %s "%s"'%( inputs[0], cmd, inputs[2] ) )
 
 #allSnippets[ resize_image.sname ] = resize_image

@@ -1,4 +1,8 @@
-import random, re, os
+#import random, re, os
+try :
+    import random, re, os
+except ImportError :
+    print "Couldn't import one or more of random, re and os."
 
 class screenshot() :
     name = 'Take a screenshot of the entire screen'
@@ -9,17 +13,18 @@ class screenshot() :
     defaults = [ '0', 'screenshot'+str( random.randint( 1,10000 ) ) ]
     errors = [ '', '' ]
     types = [ '', 'path:w' ]
+    packages = [ 'imagemagick' ]
 
     def __init__( self ) :
-	import random, re, os
+        try :
+        	import random, re, os
+        except ImportError :
+            print "Couldn't import one or more of random, re and os."
 
     def validateInputs ( self, inputs ) :
         return re.match('^\d+$',inputs[0] )
 
     def doJob( self, inputs ) :
-        if self.validateInputs( inputs ) :
-            os.system( 'sleep %s; import -window root %s'%( inputs[0], inputs[1] ) )
-        else :
-            print 'Error'
+        os.system( 'sleep %s; import -window root "%s"'%( inputs[0], inputs[1] ) )
 
 #allSnippets[ screenshot.sname ] = screenshot

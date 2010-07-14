@@ -1,7 +1,14 @@
-import smtplib, os
-from email.mime.image import MIMEImage
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+#import smtplib, os
+#from email.mime.image import MIMEImage
+#from email.mime.text import MIMEText
+#from email.mime.multipart import MIMEMultipart
+try :
+    import smtplib, os
+    from email.mime.image import MIMEImage
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+except ImportError :
+    print "Couldn't import one or more of smtplib, os, email.mime.image.MIMEImage, email.mime.text.MIMEText and email.mime.multipart.MIMEMultipart."
 
 class sendEMail() :
     name = 'Email a text message along with one attachment'
@@ -12,12 +19,16 @@ class sendEMail() :
     defaults = [ 'A Message', 'localhost@locahost', 'localhost@localhost','/dev/null', '' ]
     errors = [ '', '', '', '', '' ]
     types = [ '', '', '', 'path:r', '' ]
+    packages = [ 'sendmail' ]
 
     def __init__( self ) :
-	import smtplib, os
-	from email.mime.image import MIMEImage
-	from email.mime.text import MIMEText
-	from email.mime.multipart import MIMEMultipart
+        try :
+        	import smtplib, os
+        	from email.mime.image import MIMEImage
+        	from email.mime.text import MIMEText
+        	from email.mime.multipart import MIMEMultipart
+        except ImportError :
+            print "Couldn't import one or more of smtplib, os, email.mime.image.MIMEImage, email.mime.text.MIMEText and email.mime.multipart.MIMEMultipart."
 
     def validateInputs( self, inputs ) :
         #return True

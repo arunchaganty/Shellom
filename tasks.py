@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Author - Vikram Rao S
 # Date - 08-06-2010
 # Purpose - This module defines a snippet and supports adding of snippets to a

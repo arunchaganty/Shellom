@@ -1,4 +1,8 @@
-import random, os
+#import random, os
+try :
+    import random, os
+except ImportError :
+    print "Couldn't import one or more of random and os."
 
 class text2wav() :
     name = 'Convert the text in a file to a wav sound file'
@@ -9,9 +13,13 @@ class text2wav() :
     defaults = [ '/dev/null', 'text2wave'+str( random.randint( 1,10000 ) ) ]
     errors = [ '', '' ]
     types = [ 'path:r', 'path:w' ]
+    packages = [ 'festival' ]
 
     def __init__( self ) :
-	import random, os
+        try :
+        	import random, os
+        except ImportError :
+            print "Couldn't import one or more of random and os."
 
     def validateInputs( self,inputs ) :
         #return True

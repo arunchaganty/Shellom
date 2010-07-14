@@ -1,4 +1,8 @@
-import wordpresslib
+#import wordpresslib
+try :
+    import wordpresslib
+except ImportError :
+    print "Couldn't import wordpresslib."
 
 class publishWordpressPost() :
     name = 'Publish a wordpress blog post'
@@ -9,9 +13,13 @@ class publishWordpressPost() :
     defaults = [ '', '', '', 'A subject', 'Some words', '' ]
     errors = [ 'Blog fault', 'Username fault', 'Password fault', '', '', '' ]
     types = [ '', '', '', '', 'path:w', '' ]
+    packages = [ 'wordpresslib' ]
 
     def __init__( self ) :
-	import wordpresslib
+        try :
+        	import wordpresslib
+        except ImportError :
+            print "Couldn't import wordpresslib."
 
     def validateInputs( self, inputs ) :
         return True

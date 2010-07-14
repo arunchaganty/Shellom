@@ -6,12 +6,13 @@
 
 import sys
 sys.dont_write_bytecode = True
-import os, tasks, xmlgenerator, xmlcompiler, snippets
+import os, tasks, xmlgenerator, xmlcompiler, snippets, subprocess
 
 def main() :
     print '''Enter a snippet number to begin.
-    To end, enter a negative snippet number.
-    Please use absolute paths everywhere.'''
+To end, enter a negative snippet number.
+Please try and use absolute paths whereever possible.
+Relative paths are relative to the main Shellom directory, from where main.py has been run.'''
 
     s = filter( lambda x: x[0] != '_' and x != 'os' and x != 'sys' and x != 'module', dir( snippets ) )
     print '-'*50
@@ -34,29 +35,73 @@ def main() :
         inputsToBeGot=currentSnippet.tags
         currentInputs=[]
 
+        
+        
+        for i in currentSnippet.packages :
+            if( os.system( "dpkg -l | awk '{ print $2 }' | tail -n +6 | grep %s > /dev/null"%i ) != 0 ) :
+                print i + ' missing. Install the package before using this snippet.'
+                sys.exit( -1 )
+
+
+
+        lists = []
+        more = 0
         for i in range( len( inputsToBeGot ) ) :
             ioro = 'i'
             if i == len( inputsToBeGot ) -1 :
                 ioro = 'o'
-            currentInputs.append( raw_input( '%s%d - %s ... '%( ioro, inputID, currentSnippet.details[i] ) ) )
-            inputID+=1
+            #currentInputs.append( 
+            newInput = raw_input( '%s%d - %s ... '%( ioro, inputID + i + more, currentSnippet.details[i] ) )
 
-        #print currentInputs
+            if len( newInput ) > 4 and newInput[:4] == 'list' :
+                lists.append( i )
+                newInput = newInput[4:].strip().split( ', ' )
+                newInput[0] = newInput[0][1:].strip()
+                newInput[-1] = newInput[-1][:-2].strip()
+                more += len( newInput ) - 1
 
-        if True :#s[ currentSnippet ]().validateInputs( currentInputs ) :
-            xml=xmlgenerator.getxml( xml, currentSnippet, currentInputs, snipID, inputID-len( inputsToBeGot ) )
-            # THIS IS WHAT YOU SHOULD BE UNCOMMENTING DURING DEBUG SESSIONSprint xml
+            currentInputs.append( newInput )
 
-            if xml[:5]==list('ERROR') :
-                print ''.join(xml) #'Error while generating XML ... Will Quit'
-                sys.exit(1)
-
+        
+        if len( lists ) > 0 :
+            lenLists = len( currentInputs[ lists[0] ] )
         else :
-            inputID -= len( inputsToBeGot )
-            print 'WRONG'*10
+            lenLists = 0
+
+        for i in lists :
+            if lenLists != len( currentInputs[i] ) :
+                print 'Lists incompatible. Exiting ...'
+                sys.exit( -1 )
+
+        if lenLists != 0 :
+            notLists = list( set( range( len( inputsToBeGot ) ) ).difference( set( lists ) ) )
+            notLists.sort()
+    
+            thisInput = [0] * len( inputsToBeGot )
+            for i in notLists :
+                thisInput[i] = currentInputs[i]
+    
+            for i in range( lenLists ) :
+                for j in lists :
+                    thisInput[j] = currentInputs[j][i]
+                xml = xmlgenerator.getxml( xml, currentSnippet, thisInput, snipID, inputID )
+                inputID += len( inputsToBeGot )
+                snipID += 1
+        else :
+            xml = xmlgenerator.getxml( xml, currentSnippet, currentInputs, snipID, inputID )
+        
+
+#        xml = xmlgenerator.getxml( xml, currentSnippet, currentInputs, snipID, inputID )
+        inputID += len( inputsToBeGot ) + more
+        print ( xml )
+
+        if xml[:5]==list('ERROR') :
+            print ''.join(xml)
+            sys.exit(1)
+
         print '-'*50            
         choice=int( raw_input( '... ' ) )
-        snipID+=1
+#        snipID+=1
 
     xml.append( '</workflow>' )
     

@@ -1,5 +1,9 @@
-import urllib2, random, os
-from BeautifulSoup import BeautifulSoup
+#import urllib2, random, os
+#from BeautifulSoup import BeautifulSoup
+try :
+    import urllib2, random, os
+except ImportError :
+    print "Couldn't import one or more of urllib2, random and os."
 
 class downloadPictures() :
     name = 'Download all pictures from a webpage'
@@ -10,9 +14,13 @@ class downloadPictures() :
     defaults = [ 'http://www.google.com/', 'download_pictures'+str( random.randint( 1,10000 ) ) ]
     errors = [ '', '' ]
     types = [ '', '' ]
+    packages = [ 'python-beautifulsoup' ]
 
     def __init__( self ) :
-	import urllib2, random, os
+        try :
+        	import urllib2, random, os
+        except ImportError :
+            print "Couldn't import one or more of urllib2, random and os."
 	from BeautifulSoup import BeautifulSoup
 
     def validateInputs( self, inputs ) :
