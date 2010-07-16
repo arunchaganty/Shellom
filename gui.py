@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 # Form implementation generated from reading ui file 'shellom.ui'
 #
 # Created: Fri Jul 16 10:24:57 2010
@@ -9,13 +8,61 @@
 import os, re, subprocess
 import snippets
 from PyQt4 import QtCore, QtGui
+import PyZenity as zen
 
-class Ui_MainWindow(object):
+if not os.access( 'tmp', os.W_OK ) :
+    os.mkdir( 'tmp' )
+
+class Ui_MainWindow(QtGui.QMainWindow):
+    snipID = 1
+    inputID = 1
+    currenr = ''
+    xml = [ '<workflow>' ]
+
+
+    def clearTable(self) :
+        while self.tableWidget.rowCount() > 0 :
+            self.tableWidget.removeRow( 0 )
+
     def showSnippet(self) :
         print 'showSnippet'
+        s = str( self.comboBox.currentText() )
+        currentSnippet = getattr( getattr( snippets, s ), s )
+        
+        #--------------------------------------------------------------------------------------------------------------------
+        for i in currentSnippet.packages :
+            if( os.system( "dpkg -l | awk '{ print $2 }' | tail -n +6 | grep %s > /dev/null"%i ) != 0 ) :
+                QtGui.QMessageBox.warning( self, "Error !", '%s missing. Install the package before using this snippet.'%i )
+                self.clearTable()
+                return
+        #--------------------------------------------------------------------------------------------------------------------
+
+        while self.tableWidget.rowCount() > 0 :
+            self.tableWidget.removeRow( 0 )
+
+        j = 0
+        for i in currentSnippet.details :
+            self.tableWidget.insertRow( j )
+            item = QtGui.QTableWidgetItem()
+            self.tableWidget.setItem(j, 0, item)
+            item = QtGui.QTableWidgetItem()
+            self.tableWidget.setItem(j, 1, item)
+            item = QtGui.QTableWidgetItem()
+            self.tableWidget.setItem(j, 2, item)
+            self.tableWidget.item(j, 1).setText(QtGui.QApplication.translate("MainWindow", i, None, QtGui.QApplication.UnicodeUTF8))
+            #self.tableWidget.verticalHeaderItem(j).setText(QtGui.QApplication.translate("MainWindow", "~i%d"%self.snipID, None, QtGui.QApplication.UnicodeUTF8))
+            j += 1
+
+        current = currentSnippet.sname
 
     def submitInputs(self) :
         print 'submitInputs'
+        ins = []
+        i = 0
+        while i < self.tableWidget.rowCount() :
+            ins.append( str( self.tableWidget.item( i , 2 ).text() ) )
+            i += 1
+        print ins 
 
     def getList(self) :
         print 'getList'
@@ -56,7 +103,6 @@ class Ui_MainWindow(object):
         self.tableWidget.setGeometry(QtCore.QRect(10, 60, 371, 301))
         self.tableWidget.setObjectName("tableWidget")
         self.tableWidget.setColumnCount(3)
-        #self.tableWidget.setRowCount(1)
 
         item = QtGui.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(0, item)
@@ -64,8 +110,6 @@ class Ui_MainWindow(object):
         self.tableWidget.setHorizontalHeaderItem(1, item)
         item = QtGui.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(2, item)
-        #item = QtGui.QTableWidgetItem()
-        #self.tableWidget.setItem(0, 0, item)
 
         self.getListLabel = QtGui.QLabel(self.centralwidget)
         self.getListLabel.setGeometry(QtCore.QRect(10, 420, 161, 21))
