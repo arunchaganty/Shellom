@@ -6,7 +6,7 @@
 #
 # WARNING! All changes made in this file will be lost!
 import os, re, subprocess
-import snippets
+import snippets, xmlgenerator, xmlcompiler
 from PyQt4 import QtCore, QtGui
 import PyZenity as zen
 
@@ -16,13 +16,20 @@ if not os.access( 'tmp', os.W_OK ) :
 class Ui_MainWindow(QtGui.QMainWindow):
     snipID = 1
     inputID = 1
-    currenr = ''
+    currentSnippet = ''
     xml = [ '<workflow>' ]
+
+
+
 
 
     def clearTable(self) :
         while self.tableWidget.rowCount() > 0 :
             self.tableWidget.removeRow( 0 )
+
+
+
+
 
     def showSnippet(self) :
         print 'showSnippet'
@@ -53,16 +60,74 @@ class Ui_MainWindow(QtGui.QMainWindow):
             #self.tableWidget.verticalHeaderItem(j).setText(QtGui.QApplication.translate("MainWindow", "~i%d"%self.snipID, None, QtGui.QApplication.UnicodeUTF8))
             j += 1
 
-        current = currentSnippet.sname
+        self.currentSnippet = currentSnippet.sname
+
+
+
+
 
     def submitInputs(self) :
         print 'submitInputs'
-        ins = []
+        sn = getattr( getattr( snippets, self.currentSnippet ), self.currentSnippet )
+        currentInputs = []
+        lists = []
         i = 0
         while i < self.tableWidget.rowCount() :
-            ins.append( str( self.tableWidget.item( i , 2 ).text() ) )
-            i += 1
-        print ins 
+            newInput =  str( self.tableWidget.item( i , 2 ).text() )
+            if len( newInput ) > 4 and newInput[:4] == 'list' :
+                lists.append( i )
+                newInput = newInput[4:].strip().split( ', ' )
+                newInput[0] = newInput[0][1:].strip()
+                newInput[-1] = newInput[-1][:-2].strip()
+
+            currentInputs.append( newInput )
+            i += 1 
+
+        if len( lists ) > 0 :
+            lenLists = len( currentInputs[ lists[0] ] )
+        else :
+            lenLists = 0
+        
+        for i in lists :
+            if lenLists != len( currentInputs[i] ) :
+                print 'Lists incompatible. Try correcting them.'
+                return
+        
+        if lenLists != 0 :
+            notLists = list( set( range( len( inputsToBeGot ) ) ).difference( set( lists ) ) )
+            notLists.sort()
+        
+            thisInput = [0] * len( inputsToBeGot )
+            for i in notLists :
+                thisInput[i] = currentInputs[i]
+        
+            for i in range( lenLists ) :
+                for j in lists :
+                    thisInput[j] = currentInputs[j][i]
+                tmp = xmlgenerator.getxml( self.xml, sn, thisInput, self.snipID, self.inputID )
+                
+                if tmp[:5] == list( 'ERROR' ) :
+                    QtGui.QMessageBox.warning( self, 'Error', ''.join( tmp ) + '. Try rechecking your inputs' )
+                    return
+                else :
+                    self.xml = tmp
+                    self.snipID += 1
+                    self.inputID += self.tableWidget.rowCount()
+        else :
+            tmp = xmlgenerator.getxml( self.xml, sn, currentInputs, self.snipID, self.inputID )
+            if tmp[:5] == list( 'ERROR' ) :
+                QtGui.QMessageBox.warning( self, 'Error !', ''.join( tmp ) + '. Try rechecking your inputs' )
+                return
+            else :
+                self.xml = tmp
+                self.snipID += 1
+                self.inputID += self.tableWidget.rowCount()
+
+        print ''.join( self.xml )
+        print '\n\n\n\n\n\n\n'
+
+
+
 
     def getList(self) :
         print 'getList'
@@ -76,6 +141,10 @@ class Ui_MainWindow(QtGui.QMainWindow):
         self.listPlainTextEdit.clear()
         self.listPlainTextEdit.setPlainText( toBePut )
         return toBePut
+
+
+
+
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -205,4 +274,3 @@ if __name__ == "__main__":
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
-
