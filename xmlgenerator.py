@@ -32,6 +32,7 @@ def getxml( xml, snippet, inputs, snip, inp ) :
     @param inp - the ID to give to the first input
     """
     
+    copyOfXML = xml
     
     if len( inputs ) != len( snippet.tags ) :
         return list('ERROR_TOO_FEW_INPUTS')
@@ -61,14 +62,17 @@ def getxml( xml, snippet, inputs, snip, inp ) :
             try :
                 toBeAppended =  str( aux( inn[1:], soup ) )
             except BaseException :
+                xml = copyOfXML
                 return list( 'ERROR_INTERLEAVING' )
 
             if toBeAppended == 'ERROR_INTERLEAVING' :
+                xml = copyOfXML
                 return list('ERROR_INTERLEAVING')
             #else :
                 #xml.append( '<field task="%s" id="%s%d">%s</field>\n'%( snippet.tags[i], iORo, inp, toBeAppended) )
         if snippet.types[i] != '' and inputs[i] != '' :
             if not validators.validator( snippet.types[i], soup, toBeAppended ) :
+                xml = copyOfXML
                 return list( 'ERROR_INVALID_INPUT:%s\n%s'%( snippet.tags[i], toBeAppended ) )
 
         xml.append( '<field task="%s" id="%s%d">%s</field>\n'%( snippet.tags[i], iORo, inp, toBeAppended ) )

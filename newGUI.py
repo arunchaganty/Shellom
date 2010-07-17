@@ -8,7 +8,7 @@
 import os, re, subprocess, sys
 sys.dont_write_bytecode = True
 import snippets, xmlgenerator, xmlcompiler
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore, QtGui, QtXml
 import PyZenity as zen
 
 if not os.access( 'tmp', os.W_OK ) :
@@ -23,7 +23,32 @@ class Ui_MainWindow(QtGui.QMainWindow):
     oldSnipID = 1
     oldInputID = 1
 
-
+    def loadIndex(self):
+    
+          
+      self.document = QtXml.QDomDocument("DOCSINDEX")
+      self.document.setContent( QtCore.QString( ''.join(self.xml) ) )
+    
+      self.docElem = self.document.documentElement()
+    
+      self.node = self.docElem.firstChild()
+      while(self.node.isNull() == False):
+        self.element = self.node.toElement()
+    
+        if(self.element.isNull() == False):
+            if(self.element.tagName() == 'father'):
+                self.itemTreeFather = QtGui.QTreeWidgetItem(self.indexTreeWidget)
+                self.itemTreeFather.setText(0,self.element.text())
+        
+            if(self.element.tagName() == 'son'):
+                self.itemTreeSon = QtGui.QTreeWidgetItem(self.itemTreeFather)
+                self.itemTreeSon.setText(0,self.element.text())
+        
+            if(self.element.tagName() == 'grandson'):
+                self.itemTreeGrandson = QtGui.QTreeWidgetItem(self.itemTreeSon)
+                self.itemTreeGrandson.setText(0,self.element.text())
+        
+            self.node = self.node.nextSibling()
 
 
     def clear( self, aList ) :
@@ -151,7 +176,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
         print ''.join( self.xml )
         print '\n\n'
-
+        self.loadIndex()
 
 
 
