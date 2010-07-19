@@ -1,15 +1,8 @@
 #!/usr/bin/env python
-# Form implementation generated from reading ui file 'shellom.ui'
-#
-# Created: Fri Jul 16 10:24:57 2010
-#      by: PyQt4 UI code generator 4.7.2
-#
-# WARNING! All changes made in this file will be lost!
 import os, re, subprocess, sys
 sys.dont_write_bytecode = True
 import snippets, xmlgenerator, xmlcompiler
 from PyQt4 import QtCore, QtGui
-import PyZenity as zen
 
 if not os.access( 'tmp', os.W_OK ) :
     os.mkdir( 'tmp' )
@@ -23,18 +16,13 @@ class Ui_MainWindow(QtGui.QMainWindow):
     oldSnipID = 1
     oldInputID = 1
 
+    lastCorrectlyDisplayedRow = -1
 
 
 
-    def clear( self, aList ) :
-        i = len(aList) - 1
-        while i >= 0 :
-            if len( aList[i] ) > 8 and aList[:8] == '<snippet' :
-                aList = aList[:i]
-                break
-            i -= 1
 
     def clearTable(self) :
+        '''Clears the table of inputs before moving on to a new snippet.'''
         while self.tableWidget.rowCount() > 0 :
             self.tableWidget.removeRow( 0 )
 
@@ -43,6 +31,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
 
     def showSnippet(self) :
+        '''Show the snippet that is currently selected in the combo box. The input details column in the table is populated.'''
         print 'showSnippet'
         s = str( self.comboBox.currentText() )
         currentSnippet = getattr( getattr( snippets, s ), s )
@@ -50,9 +39,13 @@ class Ui_MainWindow(QtGui.QMainWindow):
         #--------------------------------------------------------------------------------------------------------------------
         for i in currentSnippet.packages :
             if( os.system( "dpkg -l | awk '{ print $2 }' | tail -n +6 | grep %s > /dev/null"%i ) != 0 ) :
-                QtGui.QMessageBox.warning( self, "Error !", '%s missing. Install the package before using this snippet.'%i )
-                self.clearTable()
-                return
+                try :
+                    from __builtin__ import __import__
+                    __import__( i )
+                except ImportError :
+                    QtGui.QMessageBox.warning( self, "Error !", '%s missing. Install the package before using this snippet.'%i )
+                    self.clearTable()
+                    return
         #--------------------------------------------------------------------------------------------------------------------
 
         while self.tableWidget.rowCount() > 0 :
@@ -68,7 +61,6 @@ class Ui_MainWindow(QtGui.QMainWindow):
             item = QtGui.QTableWidgetItem()
             self.tableWidget.setItem(j, 2, item)
             self.tableWidget.item(j, 1).setText(QtGui.QApplication.translate("MainWindow", i, None, QtGui.QApplication.UnicodeUTF8))
-            #self.tableWidget.verticalHeaderItem(j).setText(QtGui.QApplication.translate("MainWindow", "~i%d"%self.snipID, None, QtGui.QApplication.UnicodeUTF8))
             j += 1
 
         self.currentSnippet = currentSnippet.sname
@@ -78,6 +70,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
 
     def submitInputs(self) :
+        '''This function adds the current snippet to the XML.'''
         print 'submitInputs'
         if self.currentSnippet == '' :
             return
@@ -106,6 +99,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
                 print 'Lists incompatible. Try correcting them.'
                 return
         
+        #If there are lists in the inputs :
         if lenLists != 0 :
             notLists = list( set( range( self.tableWidget.rowCount() ) ).difference( set( lists ) ) )
             notLists.sort()
@@ -136,6 +130,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
             self.xml = copy
             self.oldSnipID = self.snipID + 1
             self.oldInputID = self.inputID + 1
+        #Or else :
         else :
             copy = []
             copy.extend( self.xml )
@@ -149,6 +144,8 @@ class Ui_MainWindow(QtGui.QMainWindow):
                 self.snipID += 1
                 self.inputID += self.tableWidget.rowCount()
 
+        self.lastCorrectlyDisplayedRow = self.treeWidget.row
+
         print ''.join( self.xml )
         print '\n\n'
 
@@ -156,11 +153,8 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
 
     def getList(self) :
+        '''Forms a list of files from a directory whose names contain the text or regular expression given.'''
         print 'getList'
-
-        #l = os.listdir( str( self.directoryLineEdit.text() ) )
-        #l = filter( lambda x: re.match( '.*%s.*'%str( self.filterLineEdit.text() ), x ), l )
-        #toBePut = 'list( %s )'%' ,'.join( l )
 
         x = subprocess.Popen( 'ls -a%s %s | grep %s'%( self.recursive.isChecked() and 'R' or ' ', str( self.directoryLineEdit.text() ) , str( self.filterLineEdit.text() ) ), shell=True, stdout=subprocess.PIPE )
         toBePut = 'list( %s )'%', '.join( x.communicate()[0].split('\n')[:-1] )
@@ -173,6 +167,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
 
     def done(self) :
+        '''Writes and compiles the XML file to form an executable workflow.'''
         self.xml.append( '</workflow>')
         xmlFile=open( 'tmp/workflow.xml', 'w' )
         xmlFile.write( ''.join( self.xml ) )
@@ -193,9 +188,9 @@ class Ui_MainWindow(QtGui.QMainWindow):
         self.comboBox.setGeometry(QtCore.QRect(10, 10, 161, 31))
         self.comboBox.setObjectName("comboBox")
 
-        self.sSnippet = QtGui.QPushButton(self.centralwidget)
-        self.sSnippet.setGeometry(QtCore.QRect(180, 10, 101, 31))
-        self.sSnippet.setObjectName("sSnippet")
+       #self.sSnippet = QtGui.QPushButton(self.centralwidget)
+       #self.sSnippet.setGeometry(QtCore.QRect(180, 10, 101, 31))
+       #self.sSnippet.setObjectName("sSnippet")
 
         self.sInputs = QtGui.QPushButton(self.centralwidget)
         self.sInputs.setGeometry(QtCore.QRect(110, 370, 85, 27))
@@ -276,7 +271,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        QtCore.QObject.connect(self.sSnippet, QtCore.SIGNAL("clicked()"), self.showSnippet)
+        QtCore.QObject.connect(self.comboBox, QtCore.SIGNAL("activated(int)"), self.showSnippet)
         QtCore.QObject.connect(self.getListButton, QtCore.SIGNAL("clicked()"), self.listPlainTextEdit.clear)
         QtCore.QObject.connect(self.sInputs, QtCore.SIGNAL("clicked()"), self.submitInputs)
         QtCore.QObject.connect(self.getListButton, QtCore.SIGNAL("clicked()"), self.getList)
@@ -294,7 +289,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "MainWindow", None, QtGui.QApplication.UnicodeUTF8))
-        self.sSnippet.setText(QtGui.QApplication.translate("MainWindow", "Select Snippet", None, QtGui.QApplication.UnicodeUTF8))
+        #self.sSnippet.setText(QtGui.QApplication.translate("MainWindow", "Select Snippet", None, QtGui.QApplication.UnicodeUTF8))
         self.sInputs.setText(QtGui.QApplication.translate("MainWindow", "Submit Inputs", None, QtGui.QApplication.UnicodeUTF8))
         self.tableWidget.horizontalHeaderItem(0).setText(QtGui.QApplication.translate("MainWindow", "Input ID", None, QtGui.QApplication.UnicodeUTF8))
         self.tableWidget.horizontalHeaderItem(1).setText(QtGui.QApplication.translate("MainWindow", "Input details", None, QtGui.QApplication.UnicodeUTF8))
