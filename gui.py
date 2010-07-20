@@ -28,6 +28,11 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
 
 
+    def clear(self) :
+        i = self.lastCorrectlyDisplayedRow + 1
+        while i < self.treeWidget.topLevelItemCount() :
+            self.treeWidget.removeItemWidget( self.treeWidget.topLevelItem(i), 0 )
+
 
 
     def showSnippet(self) :
@@ -55,18 +60,40 @@ class Ui_MainWindow(QtGui.QMainWindow):
         for i in currentSnippet.details :
             self.tableWidget.insertRow( j )
             item = QtGui.QTableWidgetItem()
+            item.setFlags(QtCore.Qt.NoItemFlags)
             self.tableWidget.setItem(j, 0, item)
             item = QtGui.QTableWidgetItem()
+            item.setFlags(QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsDropEnabled|QtCore.Qt.ItemIsUserCheckable|QtCore.Qt.ItemIsEnabled)
             self.tableWidget.setItem(j, 1, item)
-            item = QtGui.QTableWidgetItem()
-            self.tableWidget.setItem(j, 2, item)
-            self.tableWidget.item(j, 1).setText(QtGui.QApplication.translate("MainWindow", i, None, QtGui.QApplication.UnicodeUTF8))
+            self.tableWidget.item(j, 0).setText(QtGui.QApplication.translate("MainWindow", i, None, QtGui.QApplication.UnicodeUTF8))
             j += 1
 
         self.currentSnippet = currentSnippet.sname
 
 
 
+
+    def showInTree( self, toBeShown ) :
+        y = self.treeWidget.topLevelItemCount()
+        print y
+        for i in toBeShown :
+            item = QtGui.QTreeWidgetItem(self.treeWidget)
+            self.treeWidget.topLevelItem(y).setText(0, QtGui.QApplication.translate("MainWindow", self.currentSnippet, None, QtGui.QApplication.UnicodeUTF8))
+            for j in range( len(i) ) :
+                it = QtGui.QTreeWidgetItem( item )
+                self.treeWidget.topLevelItem(y).child(j).setText(0, QtGui.QApplication.translate("MainWindow", i[j], None, QtGui.QApplication.UnicodeUTF8))
+            y += 1
+
+        # I AM
+        # GOING
+        # TO
+        # DO
+        # THIS
+        # LATER
+
+
+        # REMEMBER : self.lastCorrectlyDisplayedRow's increment statements have
+        # been commented out because they will be handled in this function.
 
 
     def submitInputs(self) :
@@ -79,7 +106,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
         lists = []
         i = 0
         while i < self.tableWidget.rowCount() :
-            newInput =  str( self.tableWidget.item( i , 2 ).text() )
+            newInput =  str( self.tableWidget.item( i , 1 ).text() )
             if len( newInput ) > 4 and newInput[:4] == 'list' :
                 lists.append( i )
                 newInput = newInput[4:].strip().split( ', ' )
@@ -115,10 +142,12 @@ class Ui_MainWindow(QtGui.QMainWindow):
                 for j in lists :
                     thisInput[j] = currentInputs[j][i]
                 tmp = xmlgenerator.getxml( copy, sn, thisInput, self.snipID, self.inputID )
+                toBeShown.append( thisInput )
                 
                 if tmp[:5] == list( 'ERROR' ) :
-                    QtGui.QMessageBox.warning( self, 'Error', ''.join( tmp ) + '. Try rechecking your input. Inputs that preceeded this one in the list have not been processed.' )
-                    #self.clear( copy )
+                    QtGui.QMessageBox.warning( self,
+                            'Error', ''.join( tmp ) + '. Try rechecking your input. Inputs that preceeded this one in the list have not been processed.' )
+                    self.clear()
                     self.snipID = self.oldSnipID
                     self.inputID = self.oldInputID
                     return
@@ -127,9 +156,12 @@ class Ui_MainWindow(QtGui.QMainWindow):
                     self.snipID += 1
                     self.inputID += self.tableWidget.rowCount()
 
+            self.showInTree( toBeShown )
             self.xml = copy
             self.oldSnipID = self.snipID + 1
             self.oldInputID = self.inputID + 1
+
+            #self.lastCorrectlyDisplayedRow += lenLists
         #Or else :
         else :
             copy = []
@@ -137,14 +169,19 @@ class Ui_MainWindow(QtGui.QMainWindow):
             tmp = xmlgenerator.getxml( copy, sn, currentInputs, self.snipID, self.inputID )
             if tmp[:5] == list( 'ERROR' ) :
                 QtGui.QMessageBox.warning( self, 'Error !', ''.join( tmp ) + '. Try rechecking your inputs' )
-                #self.clear( copy )
+                self.clear()
                 return
             else :
                 self.xml = tmp
                 self.snipID += 1
                 self.inputID += self.tableWidget.rowCount()
+                #self.lastCorrectlyDisplayedRow += 1
+                self.showInTree( [currentInputs] )
 
-        self.lastCorrectlyDisplayedRow = self.treeWidget.row
+            self.oldSnipID = self.snipID + 1
+            self.oldInputID = self.inputID + 1
+
+
 
         print ''.join( self.xml )
         print '\n\n'
@@ -200,11 +237,18 @@ class Ui_MainWindow(QtGui.QMainWindow):
         self.treeWidget.setGeometry(QtCore.QRect(400, 10, 281, 381))
         self.treeWidget.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
         self.treeWidget.setObjectName("treeWidget")
+        self.treeWidget.setDragEnabled(True)
+        self.treeWidget.setWordWrap(True)
+        self.treeWidget.setDragDropOverwriteMode(True)
+        self.treeWidget.setDragDropMode(QtGui.QAbstractItemView.DragOnly)
+        self.treeWidget.setEditTriggers(QtGui.QAbstractItemView.AllEditTriggers)
 
         self.tableWidget = QtGui.QTableWidget(self.centralwidget)
         self.tableWidget.setGeometry(QtCore.QRect(10, 60, 371, 301))
         self.tableWidget.setObjectName("tableWidget")
-        self.tableWidget.setColumnCount(3)
+        self.tableWidget.setColumnCount(2)
+        self.tableWidget.setAcceptDrops(True)
+        self.tableWidget.setDragDropOverwriteMode(False)
 
         item = QtGui.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(0, item)
@@ -291,9 +335,8 @@ class Ui_MainWindow(QtGui.QMainWindow):
         MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "MainWindow", None, QtGui.QApplication.UnicodeUTF8))
         #self.sSnippet.setText(QtGui.QApplication.translate("MainWindow", "Select Snippet", None, QtGui.QApplication.UnicodeUTF8))
         self.sInputs.setText(QtGui.QApplication.translate("MainWindow", "Submit Inputs", None, QtGui.QApplication.UnicodeUTF8))
-        self.tableWidget.horizontalHeaderItem(0).setText(QtGui.QApplication.translate("MainWindow", "Input ID", None, QtGui.QApplication.UnicodeUTF8))
-        self.tableWidget.horizontalHeaderItem(1).setText(QtGui.QApplication.translate("MainWindow", "Input details", None, QtGui.QApplication.UnicodeUTF8))
-        self.tableWidget.horizontalHeaderItem(2).setText(QtGui.QApplication.translate("MainWindow", "Input", None, QtGui.QApplication.UnicodeUTF8))
+        self.tableWidget.horizontalHeaderItem(0).setText(QtGui.QApplication.translate("MainWindow", "Input details", None, QtGui.QApplication.UnicodeUTF8))
+        self.tableWidget.horizontalHeaderItem(1).setText(QtGui.QApplication.translate("MainWindow", "Input", None, QtGui.QApplication.UnicodeUTF8))
         __sortingEnabled = self.tableWidget.isSortingEnabled()
         self.tableWidget.setSortingEnabled(False)
         self.tableWidget.setSortingEnabled(__sortingEnabled)
