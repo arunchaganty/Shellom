@@ -28,10 +28,10 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
 
 
-    def clear(self) :
-        i = self.lastCorrectlyDisplayedRow + 1
-        while i < self.treeWidget.topLevelItemCount() :
-            self.treeWidget.removeItemWidget( self.treeWidget.topLevelItem(i), 0 )
+    #def clear(self) :
+    #    i = self.lastCorrectlyDisplayedRow + 1
+    #    while i < self.treeWidget.topLevelItemCount() :
+    #        self.treeWidget.removeItemWidget( self.treeWidget.topLevelItem(i), 0 )
 
 
 
@@ -75,12 +75,12 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
     def showInTree( self, toBeShown ) :
         y = self.treeWidget.topLevelItemCount()
-        print y
         for i in toBeShown :
             item = QtGui.QTreeWidgetItem(self.treeWidget)
             self.treeWidget.topLevelItem(y).setText(0, QtGui.QApplication.translate("MainWindow", self.currentSnippet, None, QtGui.QApplication.UnicodeUTF8))
             for j in range( len(i) ) :
                 it = QtGui.QTreeWidgetItem( item )
+                print i[j]
                 self.treeWidget.topLevelItem(y).child(j).setText(0, QtGui.QApplication.translate("MainWindow", i[j], None, QtGui.QApplication.UnicodeUTF8))
             y += 1
 
@@ -111,7 +111,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
                 lists.append( i )
                 newInput = newInput[4:].strip().split( ', ' )
                 newInput[0] = newInput[0][1:].strip()
-                newInput[-1] = newInput[-1][:-2].strip()
+                newInput[-1] = newInput[-1][:-1].strip()
 
             currentInputs.append( newInput )
             i += 1 
@@ -128,6 +128,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
         
         #If there are lists in the inputs :
         if lenLists != 0 :
+            toBeShown = []
             notLists = list( set( range( self.tableWidget.rowCount() ) ).difference( set( lists ) ) )
             notLists.sort()
         
@@ -142,12 +143,16 @@ class Ui_MainWindow(QtGui.QMainWindow):
                 for j in lists :
                     thisInput[j] = currentInputs[j][i]
                 tmp = xmlgenerator.getxml( copy, sn, thisInput, self.snipID, self.inputID )
-                toBeShown.append( thisInput )
+                debug = []
+                debug.extend( thisInput )
+                print thisInput,'======', debug
+                toBeShown.append( debug )
+                print toBeShown
                 
                 if tmp[:5] == list( 'ERROR' ) :
                     QtGui.QMessageBox.warning( self,
                             'Error', ''.join( tmp ) + '. Try rechecking your input. Inputs that preceeded this one in the list have not been processed.' )
-                    self.clear()
+                    #self.clear()
                     self.snipID = self.oldSnipID
                     self.inputID = self.oldInputID
                     return
@@ -217,7 +222,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(701, 595)
+        MainWindow.resize(901, 595)
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
 
@@ -234,7 +239,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
         self.sInputs.setObjectName("sInputs")
 
         self.treeWidget = QtGui.QTreeWidget(self.centralwidget)
-        self.treeWidget.setGeometry(QtCore.QRect(400, 10, 281, 381))
+        self.treeWidget.setGeometry(QtCore.QRect(400, 10, 481, 381))
         self.treeWidget.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
         self.treeWidget.setObjectName("treeWidget")
         self.treeWidget.setDragEnabled(True)
