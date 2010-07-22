@@ -18,7 +18,7 @@ class sendEMail() :
     tags = [ 'subject', 'from','message', 'attachment', 'to' ]
     defaults = [ 'A Message', 'localhost@locahost','/dev/null', '' ,'localhost@localhost' ]
     errors = [ '', '', '', '', '' ]
-    types = [ '', '',  'path:r', '', '' ]
+    types = [ '', '',  'path:r', 'path:r', '' ]
     packages = [ 'sendmail' ]
 
     def __init__( self ) :

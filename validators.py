@@ -16,8 +16,8 @@ def RW( soup, file, access ) :
 
     return returnValue
 
-def pattern( soup, field, pattern ) :
-    return re.match( pattern, field )
+def pattern( soup, field, regex ) :
+    return re.match( regex, field )
 
 def isInt( soup, posNum ) :
     return re.match( '\d+', posNum )
@@ -45,4 +45,4 @@ def validator( type, soup, field ) :
     elif type == 'path:w' :
         return pathW( soup, field )
     elif type[:7] == 'pattern' :
-        return pattern( soup, field, pattern.split(':')[1] )
+        return pattern( soup, field, type.split(':')[1] )

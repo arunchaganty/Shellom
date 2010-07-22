@@ -14,7 +14,7 @@ class resizeImage() :
     tags = [ 'infile', 'factor', 'outfile' ]
     defaults = [ 'shot.jpg', '100%', 'resize'+str( random.randint( 1,10000 ) ) ]
     errors = [ 'Input image not found', 'Wrong resize factor format. Type, for example as 64% or 640x480.', '' ]
-    types = [ 'path:r', '', 'path:w' ]
+    types = [ 'path:r', 'pattern:(^\d+%$)|(^\d+x\d+$)', 'path:w' ]
     packages = [ 'imagemagick' ]
 
     def __init__( self ) :
@@ -25,15 +25,11 @@ class resizeImage() :
             print "Couldn't import one or more of os, random, re and Image."
 
     def validateInputs( self, inputs ) :
-        return True
-        err=[]
         if not os.access( inputs[0], os.R_OK ) :
-            err.append( 0 )
+            return False
         if os.access( inputs[2], os.F_OK ) and not os.access( inputs[2], os.W_OK ) :
-            err.append( 2 )
-        if type( inputs[1] ) != str or not ( re.match( '^\d+%$',inputs[1] ) or re.match('^\d+x\d+$', inputs[1] ) ) :
-            err.append( 1 )
-        return err
+            return False
+        return True
 
     def doJob( self, inputs ) :
         if re.match( '^\d+%$',inputs[1] ) :
