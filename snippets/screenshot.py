@@ -12,7 +12,7 @@ class screenshot() :
     tags = [ 'delay', 'outfile' ]
     defaults = [ '0', 'screenshot'+str( random.randint( 1,10000 ) )+'.jpg' ]
     errors = [ '', '' ]
-    types = [ '', 'path:w' ]
+    types = [ 'integer', 'path:w' ]
     packages = [ 'imagemagick' ]
 
     def __init__( self ) :

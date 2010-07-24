@@ -7,6 +7,13 @@ from PyQt4 import QtCore, QtGui
 if not os.access( 'tmp', os.W_OK ) :
     os.mkdir( 'tmp' )
 
+
+
+class myQTableWidget( QtGui.QTableWidget ) :
+    def dropEvent(self, e) :
+        if self.dropIndicatorPosition() == 0 :
+            QtGui.QTableWidget.dropEvent(self,e)
+
 class Ui_MainWindow(QtGui.QMainWindow):
     snipID = 1
     inputID = 1
@@ -16,7 +23,6 @@ class Ui_MainWindow(QtGui.QMainWindow):
     oldSnipID = 1
     oldInputID = 1
 
-    lastCorrectlyDisplayedRow = -1
 
 
 
@@ -28,16 +34,9 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
 
 
-    #def clear(self) :
-    #    i = self.lastCorrectlyDisplayedRow + 1
-    #    while i < self.treeWidget.topLevelItemCount() :
-    #        self.treeWidget.removeItemWidget( self.treeWidget.topLevelItem(i), 0 )
-
-
 
     def showSnippet(self) :
         '''Show the snippet that is currently selected in the combo box. The input details column in the table is populated.'''
-        print 'showSnippet'
         s = str( self.comboBox.currentText() )
         currentSnippet = getattr( getattr( snippets, s ), s )
         
@@ -84,21 +83,10 @@ class Ui_MainWindow(QtGui.QMainWindow):
                 self.treeWidget.topLevelItem(y).child(j).setText(0, QtGui.QApplication.translate("MainWindow", i[j], None, QtGui.QApplication.UnicodeUTF8))
             y += 1
 
-        # I AM
-        # GOING
-        # TO
-        # DO
-        # THIS
-        # LATER
-
-
-        # REMEMBER : self.lastCorrectlyDisplayedRow's increment statements have
-        # been commented out because they will be handled in this function.
 
 
     def submitInputs(self) :
         '''This function adds the current snippet to the XML.'''
-        print 'submitInputs'
         if self.currentSnippet == '' :
             return
         sn = getattr( getattr( snippets, self.currentSnippet ), self.currentSnippet )
@@ -166,7 +154,6 @@ class Ui_MainWindow(QtGui.QMainWindow):
             self.oldSnipID = self.snipID + 1
             self.oldInputID = self.inputID + 1
 
-            #self.lastCorrectlyDisplayedRow += lenLists
         #Or else :
         else :
             copy = []
@@ -180,7 +167,6 @@ class Ui_MainWindow(QtGui.QMainWindow):
                 self.xml = tmp
                 self.snipID += 1
                 self.inputID += self.tableWidget.rowCount()
-                #self.lastCorrectlyDisplayedRow += 1
                 self.showInTree( [currentInputs] )
 
             self.oldSnipID = self.snipID + 1
@@ -189,14 +175,12 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
 
         print ''.join( self.xml )
-        print '\n\n'
 
 
 
 
     def getList(self) :
         '''Forms a list of files from a directory whose names contain the text or regular expression given.'''
-        print 'getList'
 
         x = subprocess.Popen( 'ls -a%s %s | grep %s'%( self.recursive.isChecked() and 'R' or ' ', str( self.directoryLineEdit.text() ) , str( self.filterLineEdit.text() ) ), shell=True, stdout=subprocess.PIPE )
         toBePut = 'list( %s )'%', '.join( x.communicate()[0].split('\n')[:-1] )
@@ -220,19 +204,52 @@ class Ui_MainWindow(QtGui.QMainWindow):
         sys.exit( 0 )
 
 
+    def getFileList(self) :
+        '''Makes a list of files of length equal to that of an input list. This can be used as the list of files to store output to.'''
+        self.listPlainTextEdit.clear()
+        
+        i = 0
+        while i < self.tableWidget.rowCount()  :
+            cur = str( self.tableWidget.item(i, 1).text() )
+            if len( cur ) <= 6 or cur[:5] != 'list(' or cur[-1] != ')' :
+                i += 1
+                continue
+            length = len( cur[5:][:-1].strip().split(',') )
+            
+            template = str( self.formatLineEdit.text() ).split( '.' )
+            if len( template ) > 2 :
+                i += 1
+                continue
+            if len( template ) == 1 :
+                template.append( '' )
+
+            out = []
+            import random
+            for i in range( length ) :
+                out.append( '%s%d.%s'%( template[0], random.randint( 0, 100*length ), template[1] ) )
+
+            self.listPlainTextEdit.setPlainText( 'list( %s )'%', '.join( out ) )
+            break
+
+        if i == self.tableWidget.rowCount()  and str( self.listPlainTextEdit.toPlainText() ) == '' :
+            QtGui.QMessageBox.warning( self, 'Error !', 'None of your inputs have a properly formatted list.' )
+            
+
+
+
+
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(901, 595)
+        MainWindow.setMinimumSize(QtCore.QSize(901, 595))
+        MainWindow.setMaximumSize(QtCore.QSize(901, 595))
+
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
 
         self.comboBox = QtGui.QComboBox(self.centralwidget)
         self.comboBox.setGeometry(QtCore.QRect(10, 10, 161, 31))
         self.comboBox.setObjectName("comboBox")
-
-       #self.sSnippet = QtGui.QPushButton(self.centralwidget)
-       #self.sSnippet.setGeometry(QtCore.QRect(180, 10, 101, 31))
-       #self.sSnippet.setObjectName("sSnippet")
 
         self.sInputs = QtGui.QPushButton(self.centralwidget)
         self.sInputs.setGeometry(QtCore.QRect(110, 370, 85, 27))
@@ -244,16 +261,18 @@ class Ui_MainWindow(QtGui.QMainWindow):
         self.treeWidget.setObjectName("treeWidget")
         self.treeWidget.setDragEnabled(True)
         self.treeWidget.setWordWrap(True)
-        self.treeWidget.setDragDropOverwriteMode(True)
         self.treeWidget.setDragDropMode(QtGui.QAbstractItemView.DragOnly)
-        self.treeWidget.setEditTriggers(QtGui.QAbstractItemView.AllEditTriggers)
+        self.treeWidget.expandAll()
 
-        self.tableWidget = QtGui.QTableWidget(self.centralwidget)
+        self.tableWidget = myQTableWidget(self.centralwidget)
         self.tableWidget.setGeometry(QtCore.QRect(10, 60, 371, 301))
         self.tableWidget.setObjectName("tableWidget")
+        self.tableWidget.setDragDropOverwriteMode( True )
         self.tableWidget.setColumnCount(2)
-        self.tableWidget.setAcceptDrops(True)
-        self.tableWidget.setDragDropOverwriteMode(False)
+        self.tableWidget.setDragDropMode( QtGui.QAbstractItemView.DropOnly )
+        self.tableWidget.horizontalHeader().setResizeMode( QtGui.QHeaderView.Stretch )
+#        self.tableWidget.resizeRowsToContents()
+#        self.tableWidget.horizontalHeader().setStretchLastSection( True )
 
         item = QtGui.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(0, item)
@@ -317,6 +336,18 @@ class Ui_MainWindow(QtGui.QMainWindow):
         self.doneButton.setGeometry(QtCore.QRect(290, 10, 85, 31))
         self.doneButton.setObjectName("doneButton")
 
+        self.getFileListButton = QtGui.QPushButton(self.centralwidget)
+        self.getFileListButton.setGeometry(QtCore.QRect(570, 560, 101, 27))
+        self.getFileListButton.setObjectName("getFileListButton")
+        
+        self.formatLineEdit = QtGui.QLineEdit(self.centralwidget)
+        self.formatLineEdit.setGeometry(QtCore.QRect(440, 560, 113, 31))
+        self.formatLineEdit.setObjectName("formatLineEdit")
+        
+        self.formatLabel = QtGui.QLabel(self.centralwidget)
+        self.formatLabel.setGeometry(QtCore.QRect(390, 570, 57, 17))
+        self.formatLabel.setObjectName("formatLabel")
+        
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
@@ -325,6 +356,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
         QtCore.QObject.connect(self.sInputs, QtCore.SIGNAL("clicked()"), self.submitInputs)
         QtCore.QObject.connect(self.getListButton, QtCore.SIGNAL("clicked()"), self.getList)
         QtCore.QObject.connect(self.doneButton, QtCore.SIGNAL("clicked()"), self.done)
+        QtCore.QObject.connect(self.getFileListButton, QtCore.SIGNAL("clicked()"), self.getFileList )
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
         #------------------------------------------------------------------------------------------------------
@@ -338,7 +370,6 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "Shellom - The Automator Port", None, QtGui.QApplication.UnicodeUTF8))
-        #self.sSnippet.setText(QtGui.QApplication.translate("MainWindow", "Select Snippet", None, QtGui.QApplication.UnicodeUTF8))
         self.sInputs.setText(QtGui.QApplication.translate("MainWindow", "Submit Inputs", None, QtGui.QApplication.UnicodeUTF8))
         self.tableWidget.horizontalHeaderItem(0).setText(QtGui.QApplication.translate("MainWindow", "Input details", None, QtGui.QApplication.UnicodeUTF8))
         self.tableWidget.horizontalHeaderItem(1).setText(QtGui.QApplication.translate("MainWindow", "Input", None, QtGui.QApplication.UnicodeUTF8))
@@ -352,7 +383,8 @@ class Ui_MainWindow(QtGui.QMainWindow):
         self.getListButton.setText(QtGui.QApplication.translate("MainWindow", "Get List", None, QtGui.QApplication.UnicodeUTF8))
         self.listLabel.setText(QtGui.QApplication.translate("MainWindow", "List", None, QtGui.QApplication.UnicodeUTF8))
         self.doneButton.setText(QtGui.QApplication.translate("MainWindow", "Done !", None, QtGui.QApplication.UnicodeUTF8))
-
+        self.getFileListButton.setText(QtGui.QApplication.translate("MainWindow", "Get a list of files", None, QtGui.QApplication.UnicodeUTF8))
+        self.formatLabel.setText(QtGui.QApplication.translate("MainWindow", "Format", None, QtGui.QApplication.UnicodeUTF8))
 
         self.treeWidget.headerItem().setText(0, QtGui.QApplication.translate("MainWindow", "Snippets", None, QtGui.QApplication.UnicodeUTF8))
         self.treeWidget.setSortingEnabled(False)
