@@ -72,8 +72,9 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
 
 
-    def showInTree( self, toBeShown ) :
+    def showInTreeOne( self, toBeShown ) :
         y = self.treeWidget.topLevelItemCount()
+
         for i in toBeShown :
             item = QtGui.QTreeWidgetItem(self.treeWidget)
             self.treeWidget.topLevelItem(y).setText(0, QtGui.QApplication.translate("MainWindow", self.currentSnippet, None, QtGui.QApplication.UnicodeUTF8))
@@ -82,6 +83,26 @@ class Ui_MainWindow(QtGui.QMainWindow):
                 print i[j]
                 self.treeWidget.topLevelItem(y).child(j).setText(0, QtGui.QApplication.translate("MainWindow", i[j], None, QtGui.QApplication.UnicodeUTF8))
             y += 1
+
+    def showInTreeMany( self, toBeShown ) :
+        self.showInTreeOne( [toBeShown[0]] )
+        root = self.treeWidget.topLevelItem(self.treeWidget.topLevelItemCount() - 1)
+        for i in toBeShown[1:] :
+            item = QtGui.QTreeWidgetItem(root)
+            #self.treeWidget.topLevelItem(y).setText(0, QtGui.QApplication.translate("MainWindow", self.currentSnippet, None, QtGui.QApplication.UnicodeUTF8))
+            item.setText(0, QtGui.QApplication.translate("MainWindow", self.currentSnippet, None, QtGui.QApplication.UnicodeUTF8))
+            for j in range( len(i) ) :
+                it = QtGui.QTreeWidgetItem( item )
+                print i[j]
+                #self.treeWidget.topLevelItem(y).child(j).setText(0, QtGui.QApplication.translate("MainWindow", i[j], None, QtGui.QApplication.UnicodeUTF8))
+                item.child(j).setText(0, QtGui.QApplication.translate("MainWindow", i[j], None, QtGui.QApplication.UnicodeUTF8))
+            #y += 1
+
+    def showInTree( self, toBeShown ) :
+        if len(toBeShown) == 1 :
+            self.showInTreeOne( toBeShown )
+        else :
+            self.showInTreeMany( toBeShown )
 
 
 
@@ -93,8 +114,14 @@ class Ui_MainWindow(QtGui.QMainWindow):
         currentInputs = []
         lists = []
         i = 0
+        
+        toBeShown = [[]]
+
         while i < self.tableWidget.rowCount() :
             newInput =  str( self.tableWidget.item( i , 1 ).text() )
+
+            toBeShown[0].append( newInput )
+
             if len( newInput ) > 4 and newInput[:4] == 'list' :
                 lists.append( i )
                 newInput = newInput[4:].strip().split( ', ' )
@@ -116,7 +143,6 @@ class Ui_MainWindow(QtGui.QMainWindow):
         
         #If there are lists in the inputs :
         if lenLists != 0 :
-            toBeShown = []
             notLists = list( set( range( self.tableWidget.rowCount() ) ).difference( set( lists ) ) )
             notLists.sort()
         
@@ -133,9 +159,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
                 tmp = xmlgenerator.getxml( copy, sn, thisInput, self.snipID, self.inputID )
                 debug = []
                 debug.extend( thisInput )
-                print thisInput,'======', debug
                 toBeShown.append( debug )
-                print toBeShown
                 
                 if tmp[:5] == list( 'ERROR' ) :
                     QtGui.QMessageBox.warning( self,
@@ -149,6 +173,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
                     self.snipID += 1
                     self.inputID += self.tableWidget.rowCount()
 
+            print toBeShown
             self.showInTree( toBeShown )
             self.xml = copy
             self.oldSnipID = self.snipID + 1
