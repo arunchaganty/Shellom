@@ -10,7 +10,7 @@ class mountDiscImage() :
     ID = 6
     details = [ 'Path to image', 'Path to mount point', 'Root password','Unmount ? y or Y for \'yes\' and anything else for \'no\'' ]
     tags = [ 'image', 'mountPoint', 'password', 'unmount' ]
-    defaults = [ '', '/media/mount_image'+str( random.randint( 1,10000 ) ), '', 'n' ]
+    defaults = [ '/dev/null', '/media/mount_image'+str( random.randint( 1,10000 ) ), '', 'n' ]
     errors = [ 'No image found', '', 'Wrong or no root password given', '' ]
     types = [ 'path:r', '', '', '' ]
     packages = []

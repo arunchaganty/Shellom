@@ -6,7 +6,7 @@
 
 import sys
 sys.dont_write_bytecode = True
-import os, tasks, xmlgenerator, xmlcompiler, snippets, subprocess
+import os, tasks, xmlgenerator, xmlcompiler, snippets, subprocess, random
 
 def main() :
     print '''Enter a snippet number to begin.
@@ -21,7 +21,14 @@ Relative paths are relative to the main Shellom directory, from where main.py ha
     soSnip=map( str,oSnip )
     
     print '\n'.join( soSnip )
-    choice=int( raw_input( '... ' ) )
+
+    while 1 :
+        try :
+            choice=int( raw_input( '... ' ) )
+            break
+        except ValueError :
+            pass
+
     snipID=1
     inputID=1
     xml=[ '<workflow>' ]
@@ -73,6 +80,9 @@ Relative paths are relative to the main Shellom directory, from where main.py ha
                 print 'Lists incompatible. Exiting ...'
                 sys.exit( -1 )
 
+        if len( lists ) > 0 and lists[-1] != len( inputsToBeGot ) -1 :
+            print 'The last input must be a list. Exiting.'
+            sys.exit( -1 )
         if lenLists != 0 :
             notLists = list( set( range( len( inputsToBeGot ) ) ).difference( set( lists ) ) )
             notLists.sort()
@@ -86,12 +96,11 @@ Relative paths are relative to the main Shellom directory, from where main.py ha
                     thisInput[j] = currentInputs[j][i]
                 xml = xmlgenerator.getxml( xml, currentSnippet, thisInput, snipID, inputID )
                 inputID += len( inputsToBeGot )
-                snipID += 1
+#                snipID += 1
         else :
             xml = xmlgenerator.getxml( xml, currentSnippet, currentInputs, snipID, inputID )
         
 
-#        xml = xmlgenerator.getxml( xml, currentSnippet, currentInputs, snipID, inputID )
         inputID += len( inputsToBeGot ) + more
         print ( xml )
 
@@ -99,8 +108,15 @@ Relative paths are relative to the main Shellom directory, from where main.py ha
             print ''.join(xml)
             sys.exit(1)
 
-        print '-'*50            
-        choice=int( raw_input( '... ' ) )
+        print '-'*50 
+        while 1 :
+            try :
+                choice=int( raw_input( '... ' ) )
+                snipID += 1
+                break
+            except ValueError :
+                pass           
+#        choice=int( raw_input( '... ' ) )
 #        snipID+=1
 
     xml.append( '</workflow>' )
