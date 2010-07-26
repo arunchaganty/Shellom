@@ -12,7 +12,8 @@ def compile( xmlFileName,workflow ) :
     xmlFile=open( xmlFileName,'r' )
     if not xmlFile :
         print 'NONEXISTENT XML FILE or WRONG PATH'
-        sys.exit( 1 )
+        return
+        #sys.exit( 1 )
 
     xml=xmlFile.read()
     xmlFile.close()
@@ -32,7 +33,8 @@ def compile( xmlFileName,workflow ) :
     s=soup.findAll( 'snippet' )
     if not s :
         print 'No snippets selected !'
-        sys.exit( 1 )
+        return
+        #sys.exit( 1 )
 
     for c in s :
         io=c.findAll( 'field' )

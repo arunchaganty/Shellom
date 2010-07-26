@@ -11,17 +11,19 @@ if not os.access( 'tmp', os.W_OK ) :
 
 class myQTableWidget( QtGui.QTableWidget ) :
     def dropEvent(self, e) :
+        # Prevent drops on empty spaces that create new rows and mess up the
+        # snippet's inputs
         if self.dropIndicatorPosition() == 0 :
             QtGui.QTableWidget.dropEvent(self,e)
 
 class Ui_MainWindow(QtGui.QMainWindow):
-    snipID = 1
-    inputID = 1
-    currentSnippet = ''
-    xml = [ '<workflow>' ]
+    snipID = 1 # The ID that is assigned to a snippet in the XML file
+    inputID = 1 # The ID assisgned to inputs
+    currentSnippet = '' # Holds the name of the snippet selected in the combo-box
+    xml = [ '<workflow>' ] # This list holds lines that will make up the XML file. It's a list because of faster appends than on strings
 
-    oldSnipID = 1
-    oldInputID = 1
+    oldSnipID = 1 # The ID, one more than the last snippet that worked. To be used when snippets fail and snipID needs to be reset
+    oldInputID = 1 # Analogous to oldSnipID
 
 
 
@@ -29,6 +31,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
     def clearTable(self) :
         '''Clears the table of inputs before moving on to a new snippet.'''
+
         while self.tableWidget.rowCount() > 0 :
             self.tableWidget.removeRow( 0 )
 
@@ -37,9 +40,12 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
     def showSnippet(self) :
         '''Show the snippet that is currently selected in the combo box. The input details column in the table is populated.'''
+
         s = str( self.comboBox.currentText() )
         currentSnippet = getattr( getattr( snippets, s ), s )
         
+        # Check whether all the packages required for the snippet to run are
+        # installed. If not, clear the table and hence make the snippet unusable.
         #--------------------------------------------------------------------------------------------------------------------
         for i in currentSnippet.packages :
             if( os.system( "dpkg -l | awk '{ print $2 }' | tail -n +6 | grep %s > /dev/null"%i ) != 0 ) :
@@ -49,21 +55,26 @@ class Ui_MainWindow(QtGui.QMainWindow):
                 except ImportError :
                     QtGui.QMessageBox.warning( self, "Error !", '%s missing. Install the package before using this snippet.'%i )
                     self.clearTable()
+                    self.currentSnippet = ''
                     return
         #--------------------------------------------------------------------------------------------------------------------
 
-        while self.tableWidget.rowCount() > 0 :
-            self.tableWidget.removeRow( 0 )
+        self.clearTable()
 
         j = 0
         for i in currentSnippet.details :
             self.tableWidget.insertRow( j )
+
+            # Make the cell that will hold the details about the input
             item = QtGui.QTableWidgetItem()
             item.setFlags(QtCore.Qt.NoItemFlags)
             self.tableWidget.setItem(j, 0, item)
+
+            # Make the cell where the user will enter/drop inputs
             item = QtGui.QTableWidgetItem()
             item.setFlags(QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsDropEnabled|QtCore.Qt.ItemIsUserCheckable|QtCore.Qt.ItemIsEnabled)
             self.tableWidget.setItem(j, 1, item)
+
             self.tableWidget.item(j, 0).setText(QtGui.QApplication.translate("MainWindow", i, None, QtGui.QApplication.UnicodeUTF8))
             j += 1
 
@@ -73,6 +84,8 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
 
     def showInTreeOne( self, toBeShown ) :
+        '''Show a non-list in the tree'''
+
         y = self.treeWidget.topLevelItemCount()
 
         for i in toBeShown :
@@ -85,20 +98,21 @@ class Ui_MainWindow(QtGui.QMainWindow):
             y += 1
 
     def showInTreeMany( self, toBeShown ) :
+        '''Show a list input in the tree'''
+
         self.showInTreeOne( [toBeShown[0]] )
         root = self.treeWidget.topLevelItem(self.treeWidget.topLevelItemCount() - 1)
         for i in toBeShown[1:] :
             item = QtGui.QTreeWidgetItem(root)
-            #self.treeWidget.topLevelItem(y).setText(0, QtGui.QApplication.translate("MainWindow", self.currentSnippet, None, QtGui.QApplication.UnicodeUTF8))
             item.setText(0, QtGui.QApplication.translate("MainWindow", self.currentSnippet, None, QtGui.QApplication.UnicodeUTF8))
             for j in range( len(i) ) :
                 it = QtGui.QTreeWidgetItem( item )
                 print i[j]
-                #self.treeWidget.topLevelItem(y).child(j).setText(0, QtGui.QApplication.translate("MainWindow", i[j], None, QtGui.QApplication.UnicodeUTF8))
                 item.child(j).setText(0, QtGui.QApplication.translate("MainWindow", i[j], None, QtGui.QApplication.UnicodeUTF8))
-            #y += 1
 
     def showInTree( self, toBeShown ) :
+        '''Shows inputs( list/single ) in the tree'''
+
         if len(toBeShown) == 1 :
             self.showInTreeOne( toBeShown )
         else :
@@ -108,20 +122,23 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
     def submitInputs(self) :
         '''This function adds the current snippet to the XML.'''
+
+        # Make sure that a snippet is selected
         if self.currentSnippet == '' :
             return
-        sn = getattr( getattr( snippets, self.currentSnippet ), self.currentSnippet )
+        sn = getattr( getattr( snippets, self.currentSnippet ), self.currentSnippet ) # The current snippet class
         currentInputs = []
-        lists = []
-        i = 0
+        lists = [] # A list of input-indices that are lists
         
         toBeShown = [[]]
 
+        i = 0
         while i < self.tableWidget.rowCount() :
             newInput =  str( self.tableWidget.item( i , 1 ).text() )
 
             toBeShown[0].append( newInput )
 
+            # Convert Shellom lists 'list( -, - )' to Python lists '[ -, - ]'
             if len( newInput ) > 4 and newInput[:4] == 'list' :
                 lists.append( i )
                 newInput = newInput[4:].strip().split( ', ' )
@@ -136,9 +153,11 @@ class Ui_MainWindow(QtGui.QMainWindow):
         else :
             lenLists = 0
         
+        # Make sure that if there are lists, they are all of the same length
         for i in lists :
             if lenLists != len( currentInputs[i] ) :
-                print 'Lists incompatible. Try correcting them.'
+                QtGui.QMessageBox.warning( self,
+                        'Error', 'Lists entered are of different lengths. Try correcting them.' )
                 return
         
         #If there are lists in the inputs :
@@ -150,6 +169,8 @@ class Ui_MainWindow(QtGui.QMainWindow):
             for i in notLists :
                 thisInput[i] = currentInputs[i]
 
+            # Make a copy of the XML so that if an input from a list is wrong,
+            # we can reject all previous inputs from the list.
             copy = []
             copy.extend( self.xml )
         
@@ -157,29 +178,39 @@ class Ui_MainWindow(QtGui.QMainWindow):
                 for j in lists :
                     thisInput[j] = currentInputs[j][i]
                 tmp = xmlgenerator.getxml( copy, sn, thisInput, self.snipID, self.inputID )
+
+                # I still don't know the cause of this bug :
+                # *  thisInput contained a list of lists of inputs formed from the
+                #    lists. But when appended to toBeShown, they just contained
+                #    duplicates of the last list.append
+                # *  SOLUTION - I use a copy of thisInput called debug
                 debug = []
                 debug.extend( thisInput )
                 toBeShown.append( debug )
                 
+                # The input was invalid
                 if tmp[:5] == list( 'ERROR' ) :
                     QtGui.QMessageBox.warning( self,
                             'Error', ''.join( tmp ) + '. Try rechecking your input. Inputs that preceeded this one in the list have not been processed.' )
-                    #self.clear()
+
+                    #Revert to proper IDs
                     self.snipID = self.oldSnipID
                     self.inputID = self.oldInputID
                     return
+                # _This_ set of inputs from the lists is valid
                 else :
                     copy = tmp
                     self.snipID += 1
                     self.inputID += self.tableWidget.rowCount()
 
-            print toBeShown
             self.showInTree( toBeShown )
             self.xml = copy
+
+            # Make necessary changes to old IDs
             self.oldSnipID = self.snipID + 1
             self.oldInputID = self.inputID + 1
 
-        #Or else :
+        # There is a single input :
         else :
             copy = []
             copy.extend( self.xml )
@@ -219,6 +250,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
     def done(self) :
         '''Writes and compiles the XML file to form an executable workflow.'''
+
         self.xml.append( '</workflow>')
         xmlFile=open( 'tmp/workflow.xml', 'w' )
         xmlFile.write( ''.join( self.xml ) )
@@ -229,8 +261,9 @@ class Ui_MainWindow(QtGui.QMainWindow):
         sys.exit( 0 )
 
 
-    def getFileList(self) :
+    def getOutputFileList(self) :
         '''Makes a list of files of length equal to that of an input list. This can be used as the list of files to store output to.'''
+
         self.listPlainTextEdit.clear()
         
         i = 0
@@ -296,8 +329,6 @@ class Ui_MainWindow(QtGui.QMainWindow):
         self.tableWidget.setColumnCount(2)
         self.tableWidget.setDragDropMode( QtGui.QAbstractItemView.DropOnly )
         self.tableWidget.horizontalHeader().setResizeMode( QtGui.QHeaderView.Stretch )
-#        self.tableWidget.resizeRowsToContents()
-#        self.tableWidget.horizontalHeader().setStretchLastSection( True )
 
         item = QtGui.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(0, item)
@@ -381,11 +412,12 @@ class Ui_MainWindow(QtGui.QMainWindow):
         QtCore.QObject.connect(self.sInputs, QtCore.SIGNAL("clicked()"), self.submitInputs)
         QtCore.QObject.connect(self.getListButton, QtCore.SIGNAL("clicked()"), self.getList)
         QtCore.QObject.connect(self.doneButton, QtCore.SIGNAL("clicked()"), self.done)
-        QtCore.QObject.connect(self.getFileListButton, QtCore.SIGNAL("clicked()"), self.getFileList )
+        QtCore.QObject.connect(self.getFileListButton, QtCore.SIGNAL("clicked()"), self.getOutputFileList )
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
         #------------------------------------------------------------------------------------------------------
 
+        # Populate the combo-box with snippets
         s = filter( lambda x: x[0] != '_' and x != 'os' and x != 'sys' and x != 'module', dir( snippets ) )
         for i in s :
             self.comboBox.addItem( i )
