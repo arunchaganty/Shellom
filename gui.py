@@ -483,7 +483,8 @@ class Ui_MainWindow(  QtGui.QMainWindow ):
         # Populate the list with snippets
         s = filter( lambda x: x[0] != '_' and x != 'os' and x != 'sys' and x != 'module', dir( snippets ) )
         for i in s :
-            item = QtGui.QListWidgetItem( i, parent = self.snippetsList )
+            item = QtGui.QListWidgetItem( i )
+            self.snippetsList.addItem( item )
             item.setFlags( QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEnabled )
             self.snippetsList.addItem( item )
 

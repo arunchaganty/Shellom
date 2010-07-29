@@ -4,7 +4,7 @@ try :
     import os, random, re
     import Image
 except ImportError :
-    print "Couldn't import one or more of os, random, re and Image."
+    print "Check if you have the following Python modules : os, random, re and Image."
 
 class resizeImage() :
     name = 'Resize an image to a given percentage or size'

@@ -2,7 +2,7 @@
 try :
     import wordpresslib
 except ImportError :
-    print "Couldn't import wordpresslib."
+    print "Check if you have the following Python modules : wordpresslib."
 
 class publishWordpressPost() :
     name = 'Publish a wordpress blog post'

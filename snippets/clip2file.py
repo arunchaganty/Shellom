@@ -2,7 +2,7 @@
 try :
     import random, os	
 except ImportError :
-    print "Couldn't import either or both of os and random"
+    print "Check if you have the following Python modules : os and random"
 
 class clip2file() :
     name = 'Paste the contents of the clipboard into a file'

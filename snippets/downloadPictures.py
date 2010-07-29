@@ -3,7 +3,7 @@
 try :
     import urllib2, random, os
 except ImportError :
-    print "Couldn't import one or more of urllib2, random and os."
+    print "Check if you have the following Python modules : urllib2, random and os."
 
 class downloadPictures() :
     name = 'Download all pictures from a webpage'

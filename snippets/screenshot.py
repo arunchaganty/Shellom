@@ -2,7 +2,7 @@
 try :
     import random, re, os
 except ImportError :
-    print "Couldn't import one or more of random, re and os."
+    print "Check if you have the following Python modules : random, re and os."
 
 class screenshot() :
     name = 'Take a screenshot of the entire screen'
