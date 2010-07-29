@@ -8,7 +8,15 @@ import snippets, xmlgenerator, xmlcompiler
 if not os.access( 'tmp', os.W_OK ) :
     os.mkdir( 'tmp' )
 
+helpText = '''1. To start, select a snippet and click 'Add snippet'.
+2. Enter all the inputs and click either Add snippet ( after selecting the next snippet ) or Finish depending on whether or not you are done.
+3. If there are any errors in the inputs, you will be allowed to correct them.
+4. Click Finish when you are done. You can select where to store the workflow.
 
+NOTES :
+1. To make it easy for you to enter paths, select the cell where a path is required and click 'Insert Folder'. You have to fill in the file name manually though.
+2. For batch operations, use the 'Insert List' button to insert a list of files into the cell currently selected.
+3. If you have entered a list of inputs for a snippet, you might want to insert a list of files to store the snippet's outputs. Use 'Insert List' for that purpose as well.'''
 
 class ListWidget( QtGui.QListWidget ) :
     def mousePressEvent( self, e ) :
@@ -342,6 +350,9 @@ class Ui_MainWindow(  QtGui.QMainWindow ):
             self.inputsList.selectedItems()[0].setText( 2, ( 'list( %s )'%', '.join( ourList ) ) )
         else :
             folder = str( QtGui.QFileDialog.getExistingDirectory( parent = self, caption = "Select the folder ... " ) )
+            if folder != '' :
+                folder += '/'
+
             self.inputsList.selectedItems()[0].setText( 2, '' )
 
             fileName = QtGui.QInputDialog.getText( self, 'How should the file name be ?', 'Enter a filename with extension.\nThe selected cell will be filled with a list of names like (filename)(random number).(extension).' )
@@ -360,16 +371,14 @@ class Ui_MainWindow(  QtGui.QMainWindow ):
                 length = len( cur[5:][:-1].strip().split(',') )
                 
                 template = fileName.split( '.' )
-                if len( template ) > 2 :
-                    i += 1
-                    continue
-                if len( template ) == 1 :
-                    template.append( '' )
-
+            
                 out = []
                 import random
                 for i in range( length ) :
-                    out.append( '%s/%s%d.%s'%( folder, template[0], random.randint( 0, 100*length ), template[1] ) )
+                    if len( template ) == 1 :
+                        out.append( '%s%s%d'%( folder, template[0], random.randint( 0, 100*length ) ) )
+                    else :
+                        out.append( '%s%s%d.%s'%( folder, template[0], random.randint( 0, 100*length ), '.'.join( template[1:] ) ) )
 
                 self.inputsList.selectedItems()[0].setText( 2, ( 'list( %s )'%', '.join( out ) ) )
                 break
@@ -379,6 +388,13 @@ class Ui_MainWindow(  QtGui.QMainWindow ):
 
 
 
+    def helpMe( self ) :
+        h = QtGui.QTextEdit(self)
+        h.setGeometry( QtCore.QRect( 280, 50, 460, 401 ) )
+        h.setWindowFlags( QtCore.Qt.Dialog )
+        h.setReadOnly( True )
+        h.append( helpText )
+        h.show()
 
 
 
@@ -461,6 +477,7 @@ class Ui_MainWindow(  QtGui.QMainWindow ):
         QtCore.QObject.connect(self.finishButton, QtCore.SIGNAL("clicked()"), self.finishWorkflow )
         QtCore.QObject.connect(self.insertFileOrFolderButton, QtCore.SIGNAL("clicked()"), self.insertFolder )
         QtCore.QObject.connect(self.insertListsButton, QtCore.SIGNAL("clicked()"), self.insertLists )
+        QtCore.QObject.connect(self.helpButton, QtCore.SIGNAL("clicked()"), self.helpMe )
         QtCore.QMetaObject.connectSlotsByName( MainWindow )
         
         # Populate the list with snippets
