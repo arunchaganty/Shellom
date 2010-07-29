@@ -4,7 +4,7 @@ try :
     import os, random, re
     import Image
 except ImportError :
-    print "Check if you have the following Python modules : os, random, re and Image."
+    print "Check if you have the Image Python module.\nInstall it using sudo apt-get install python-imaging"
 
 class resizeImage() :
     name = 'Resize an image to a given percentage or size'
