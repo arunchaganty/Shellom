@@ -2,7 +2,7 @@
 try :
     import os
 except ImportError :
-    print "Couldn't import os"
+    print "Check if you have the following Python modules : os"
 
 class addSongToPlaylist() :
     name = 'Add a song to a playlist'

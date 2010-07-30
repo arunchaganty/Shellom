@@ -1,140 +1,159 @@
 #!/usr/bin/env python
+
+from PyQt4 import QtCore, QtGui
 import os, re, subprocess, sys
 sys.dont_write_bytecode = True
 import snippets, xmlgenerator, xmlcompiler
-from PyQt4 import QtCore, QtGui
 
 if not os.access( 'tmp', os.W_OK ) :
     os.mkdir( 'tmp' )
 
+helpText = '''1. To start, select a snippet and click 'Add snippet'.
+2. Enter all the inputs and click either Add snippet ( after selecting the next snippet ) or Finish depending on whether or not you are done.
+3. If there are any errors in the inputs, you will be allowed to correct them.
+4. Click Finish when you are done. You can select where to store the workflow.
+
+NOTES :
+1. To make it easy for you to enter paths, select the cell where a path is required and click 'Insert Folder'. You have to fill in the file name manually though.
+2. For batch operations, use the 'Insert List' button to insert a list of files into the cell currently selected.
+3. If you have entered a list of inputs for a snippet, you might want to insert a list of files to store the snippet's outputs. Use 'Insert List' for that purpose as well.'''
+
+class ListWidget( QtGui.QListWidget ) :
+    def mousePressEvent( self, e ) :
+        if e.button() == QtCore.Qt.LeftButton :
+            self.t = e.pos()
+        QtGui.QListWidget.mousePressEvent( self, e )
+
+        
 
 
-class myQTableWidget( QtGui.QTableWidget ) :
-    def dropEvent(self, e) :
-        # Prevent drops on empty spaces that create new rows and mess up the
-        # snippet's inputs
-        if self.dropIndicatorPosition() == 0 :
-            QtGui.QTableWidget.dropEvent(self,e)
+class TreeWidget( QtGui.QTreeWidget ) :
+    def mousePressEvent( self, e ) :
+        if e.button() == QtCore.Qt.LeftButton :
+            self.t = e.pos()
+            self.emit( QtCore.SIGNAL( 'dropFolder' ) )
+        QtGui.QTreeWidget.mousePressEvent( self, e )
 
-class Ui_MainWindow(QtGui.QMainWindow):
+    def dropEvent( self, e ) :
+
+        try :
+            target = self.itemAt( e.pos() )
+    
+            if 1 :#type( e.source() ) == TreeWidget :
+                if target.parent() == target.treeWidget().topLevelItem( target.treeWidget().topLevelItemCount() -1 ) and target.parent() and not target.childCount() :
+                    target.setText( 2, QtCore.QString( self.itemAt( e.source().t ).text( 2 ) ) )
+        except BaseException :
+            pass
+        
+
+
+
+class Ui_MainWindow(  QtGui.QMainWindow ):
+
     snipID = 1 # The ID that is assigned to a snippet in the XML file
     inputID = 1 # The ID assisgned to inputs
-    currentSnippet = '' # Holds the name of the snippet selected in the combo-box
     xml = [ '<workflow>' ] # This list holds lines that will make up the XML file. It's a list because of faster appends than on strings
 
     oldSnipID = 1 # The ID, one more than the last snippet that worked. To be used when snippets fail and snipID needs to be reset
-    oldInputID = 1 # Analogous to oldSnipID
+    oldInputID = 1 # Analogous to above
+
+    firstTime = True # Used to make sure the a submit action is not triggered the first time a snippet is added
 
 
+    def displaySnippet( self ) :
+        '''Displays the snippet selected'''
+        if self.firstTime == False :
+            x = self.submitInputs()
+            if x == -2 :
+                return -1
+        else :
+            self.firstTime = False
 
+        #--------------------------------------------------------------------------------
 
-
-    def clearTable(self) :
-        '''Clears the table of inputs before moving on to a new snippet.'''
-
-        while self.tableWidget.rowCount() > 0 :
-            self.tableWidget.removeRow( 0 )
-
-
-
-
-    def showSnippet(self) :
-        '''Show the snippet that is currently selected in the combo box. The input details column in the table is populated.'''
-
-        s = str( self.comboBox.currentText() )
-        currentSnippet = getattr( getattr( snippets, s ), s )
+        selection = str( self.snippetsList.currentItem().text() )
+        snippet = getattr( getattr( snippets, selection ), selection )
         
-        # Check whether all the packages required for the snippet to run are
-        # installed. If not, clear the table and hence make the snippet unusable.
-        #--------------------------------------------------------------------------------------------------------------------
-        for i in currentSnippet.packages :
+        #--------------------------------------------------------------------------------
+        
+        for i in snippet.packages :
             if( os.system( "dpkg -l | awk '{ print $2 }' | tail -n +6 | grep %s > /dev/null"%i ) != 0 ) :
                 try :
                     from __builtin__ import __import__
                     __import__( i )
                 except ImportError :
                     QtGui.QMessageBox.warning( self, "Error !", '%s missing. Install the package before using this snippet.'%i )
-                    self.clearTable()
-                    self.currentSnippet = ''
-                    return
-        #--------------------------------------------------------------------------------------------------------------------
+                    curSnip = ''
+                    return -1
+        
+        #--------------------------------------------------------------------------------
 
-        self.clearTable()
+        node = QtGui.QTreeWidgetItem( self.inputsList )
+        node.setFlags( QtCore.Qt.ItemIsEnabled )
+        node.setText( 0, snippet.sname )
 
-        j = 0
-        for i in currentSnippet.details :
-            self.tableWidget.insertRow( j )
+        for i in snippet.details :
+            item = QtGui.QTreeWidgetItem( node )
+            item.setFlags( QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsUserCheckable|QtCore.Qt.ItemIsEnabled )
+            item.setText( 1, i )
 
-            # Make the cell that will hold the details about the input
-            item = QtGui.QTableWidgetItem()
-            item.setFlags(QtCore.Qt.NoItemFlags)
-            self.tableWidget.setItem(j, 0, item)
-
-            # Make the cell where the user will enter/drop inputs
-            item = QtGui.QTableWidgetItem()
-            item.setFlags(QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsDropEnabled|QtCore.Qt.ItemIsUserCheckable|QtCore.Qt.ItemIsEnabled)
-            self.tableWidget.setItem(j, 1, item)
-
-            self.tableWidget.item(j, 0).setText(QtGui.QApplication.translate("MainWindow", i, None, QtGui.QApplication.UnicodeUTF8))
-            j += 1
-
-        self.currentSnippet = currentSnippet.sname
+        self.curSnip = snippet.sname
+        self.inputsList.expandItem( node )
 
 
 
 
-    def showInTreeOne( self, toBeShown ) :
-        '''Show a non-list in the tree'''
-
-        y = self.treeWidget.topLevelItemCount()
-
-        for i in toBeShown :
-            item = QtGui.QTreeWidgetItem(self.treeWidget)
-            self.treeWidget.topLevelItem(y).setText(0, QtGui.QApplication.translate("MainWindow", self.currentSnippet, None, QtGui.QApplication.UnicodeUTF8))
-            for j in range( len(i) ) :
-                it = QtGui.QTreeWidgetItem( item )
-                print i[j]
-                self.treeWidget.topLevelItem(y).child(j).setText(0, QtGui.QApplication.translate("MainWindow", i[j], None, QtGui.QApplication.UnicodeUTF8))
-            y += 1
-
-    def showInTreeMany( self, toBeShown ) :
-        '''Show a list input in the tree'''
-
-        self.showInTreeOne( [toBeShown[0]] )
-        root = self.treeWidget.topLevelItem(self.treeWidget.topLevelItemCount() - 1)
-        for i in toBeShown[1:] :
-            item = QtGui.QTreeWidgetItem(root)
-            item.setText(0, QtGui.QApplication.translate("MainWindow", self.currentSnippet, None, QtGui.QApplication.UnicodeUTF8))
-            for j in range( len(i) ) :
-                it = QtGui.QTreeWidgetItem( item )
-                print i[j]
-                item.child(j).setText(0, QtGui.QApplication.translate("MainWindow", i[j], None, QtGui.QApplication.UnicodeUTF8))
-
-    def showInTree( self, toBeShown ) :
-        '''Shows inputs( list/single ) in the tree'''
-
-        if len(toBeShown) == 1 :
-            self.showInTreeOne( toBeShown )
-        else :
-            self.showInTreeMany( toBeShown )
-
-
-
-    def submitInputs(self) :
-        '''This function adds the current snippet to the XML.'''
-
-        # Make sure that a snippet is selected
-        if self.currentSnippet == '' :
+    
+    
+    def clearInputs( self ) :
+        '''Clears the present snippet's inputs'''
+        node = self.inputsList.topLevelItem( self.inputsList.topLevelItemCount() - 1 )
+        
+        if not node :
             return
-        sn = getattr( getattr( snippets, self.currentSnippet ), self.currentSnippet ) # The current snippet class
+
+        for i in range( node.childCount() ) :
+            node.child( i ).setText( 2, '' )
+    
+    
+    
+    def setTreeProperties( self, toBeShown ) :
+        '''Sets the previous snippet's inputs to be draggable but not editable when a new snippet is added'''
+        root = self.inputsList.topLevelItem( self.inputsList.topLevelItemCount() - 1 )
+        root.setFlags( QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsEnabled ) 
+
+        for i in range( len( toBeShown[0] ) ) :
+            root.child( i ).setFlags( QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsEnabled ) 
+
+        toBeShown = toBeShown[1:]
+
+        for i in range( root.childCount() ) :
+            root.child( i ).setFlags( QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsEnabled ) 
+
+        for input in toBeShown :
+            item = QtGui.QTreeWidgetItem( root )
+            item.setFlags( QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsEnabled )
+            item.setText( 0, root.text( 0 ) )
+            
+            for j in range( len( input ) ) :
+                field = input[j]
+                f = QtGui.QTreeWidgetItem( item )
+                f.setFlags( QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsEnabled )
+                f.setText( 1, item.child( j ).text( 1 ) )
+                f.setText( 2, field )
+
+    
+    def getInputs( self ) :
+        '''Returns a list of inputs suitably formatted for other functions to take care of.'''
         currentInputs = []
         lists = [] # A list of input-indices that are lists
         
         toBeShown = [[]]
 
         i = 0
-        while i < self.tableWidget.rowCount() :
-            newInput =  str( self.tableWidget.item( i , 1 ).text() )
+        node = self.inputsList.topLevelItem( self.inputsList.topLevelItemCount() - 1 )
+        while i < node.childCount() :
+            newInput =  str( node.child( i ).text( 2 ) )
 
             toBeShown[0].append( newInput )
 
@@ -148,6 +167,27 @@ class Ui_MainWindow(QtGui.QMainWindow):
             currentInputs.append( newInput )
             i += 1 
 
+        return ( currentInputs, lists, toBeShown )
+
+
+    
+    
+    
+    
+    
+    def submitInputs( self ) :
+        '''This function adds the current snippet to the XML.'''
+
+        #if self.snippetSelected == 0  or self.curSnip == '' :
+        #    return -2
+
+        # Make sure that a snippet is selected
+        selection = str( self.inputsList.topLevelItem( self.inputsList.topLevelItemCount() - 1 ).text( 0 ) )
+        snippet = getattr( getattr( snippets, selection ), selection )
+
+        currentInputs, lists, toBeShown = self.getInputs()
+
+
         if len( lists ) > 0 :
             lenLists = len( currentInputs[ lists[0] ] )
         else :
@@ -158,14 +198,14 @@ class Ui_MainWindow(QtGui.QMainWindow):
             if lenLists != len( currentInputs[i] ) :
                 QtGui.QMessageBox.warning( self,
                         'Error', 'Lists entered are of different lengths. Try correcting them.' )
-                return
+                return -2
         
         #If there are lists in the inputs :
         if lenLists != 0 :
-            notLists = list( set( range( self.tableWidget.rowCount() ) ).difference( set( lists ) ) )
+            notLists = list( set( range( len( toBeShown[0] ) ) ).difference( set( lists ) ) )
             notLists.sort()
         
-            thisInput = [0] * self.tableWidget.rowCount()
+            thisInput = [0] * len( toBeShown[0] )
             for i in notLists :
                 thisInput[i] = currentInputs[i]
 
@@ -177,7 +217,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
             for i in range( lenLists ) :
                 for j in lists :
                     thisInput[j] = currentInputs[j][i]
-                tmp = xmlgenerator.getxml( copy, sn, thisInput, self.snipID, self.inputID )
+                tmp = xmlgenerator.getxml( copy, snippet, thisInput, self.snipID, self.inputID )
 
                 # I still don't know the cause of this bug :
                 # *  thisInput contained a list of lists of inputs formed from the
@@ -196,14 +236,14 @@ class Ui_MainWindow(QtGui.QMainWindow):
                     #Revert to proper IDs
                     self.snipID = self.oldSnipID
                     self.inputID = self.oldInputID
-                    return
+                    return -2
                 # _This_ set of inputs from the lists is valid
                 else :
                     copy = tmp
                     self.snipID += 1
-                    self.inputID += self.tableWidget.rowCount()
+                    self.inputID += len( toBeShown[0] )
 
-            self.showInTree( toBeShown )
+            self.setTreeProperties( toBeShown )
             self.xml = copy
 
             # Make necessary changes to old IDs
@@ -214,44 +254,41 @@ class Ui_MainWindow(QtGui.QMainWindow):
         else :
             copy = []
             copy.extend( self.xml )
-            tmp = xmlgenerator.getxml( copy, sn, currentInputs, self.snipID, self.inputID )
+            tmp = xmlgenerator.getxml( copy, snippet, currentInputs, self.snipID, self.inputID )
             if tmp[:5] == list( 'ERROR' ) :
                 QtGui.QMessageBox.warning( self, 'Error !', ''.join( tmp ) + '. Try rechecking your inputs' )
-                self.clear()
-                return
+                #self.clear()
+                return -2
             else :
                 self.xml = tmp
                 self.snipID += 1
-                self.inputID += self.tableWidget.rowCount()
-                self.showInTree( [currentInputs] )
+                self.inputID += len( currentInputs )
+                self.setTreeProperties( [currentInputs] )
 
             self.oldSnipID = self.snipID + 1
             self.oldInputID = self.inputID + 1
 
 
 
-        print ''.join( self.xml )
+        print ''.join( self.xml ), '\n\n\n\n\n\n'
 
 
 
 
-    def getList(self) :
-        '''Forms a list of files from a directory whose names contain the text or regular expression given.'''
-
-        x = subprocess.Popen( 'ls -a%s %s | grep %s'%( self.recursive.isChecked() and 'R' or ' ', str( self.directoryLineEdit.text() ) , str( self.filterLineEdit.text() ) ), shell=True, stdout=subprocess.PIPE )
-        toBePut = 'list( %s )'%', '.join( x.communicate()[0].split('\n')[:-1] )
-        self.listPlainTextEdit.clear()
-        self.listPlainTextEdit.setPlainText( toBePut )
-        return toBePut
-
-
-
-
-
-    def done(self) :
+    def finishWorkflow(self) :
         '''Writes and compiles the XML file to form an executable workflow.'''
 
+        try :
+            returnCode = self.submitInputs()
+        except BaseException :
+            return
+        if returnCode :
+            return
         self.xml.append( '</workflow>')
+
+        outputFile = QtGui.QFileDialog.getSaveFileName( parent = self, caption = "Select where to store workflow ... " )
+        outputFile = outputFile.split( '.' )
+
         xmlFile=open( 'tmp/workflow.xml', 'w' )
         xmlFile.write( ''.join( self.xml ) )
         xmlFile.close()
@@ -261,200 +298,222 @@ class Ui_MainWindow(QtGui.QMainWindow):
         sys.exit( 0 )
 
 
-    def getOutputFileList(self) :
-        '''Makes a list of files of length equal to that of an input list. This can be used as the list of files to store output to.'''
+    
+  
+    def insertFolder( self ) :
+        '''Used to insert a folder at the cell currently selected in the tree of inputs.'''
+        if len( self.inputsList.selectedItems() ) == 0  or self.inputsList.selectedItems()[0].isDisabled() == True :
+            QtGui.QMessageBox.warning( self, 'Error !', 'First select an input cell from the current snippet.' )
+            return
+            
+        outputFolder = QtGui.QFileDialog.getExistingDirectory( parent = self, caption = "Select the folder ... " )
 
-        self.listPlainTextEdit.clear()
+        target = self.inputsList.selectedItems()[0]
+        target.setText( 2, outputFolder )
+
+
+  
+    def insertLists( self ) :
+        '''Used to insert a list of input or output files'''
+        if len( self.inputsList.selectedItems() ) == 0  or self.inputsList.selectedItems()[0].isDisabled() == True :
+            QtGui.QMessageBox.warning( self, 'Error !', 'First select an input cell from the current snippet.' )
+            return
+
+        inputOrOutput = QtGui.QMessageBox.question( self, 'Input or output ?', 'Do you want to input a list?\nDo you want to fill in a list of random output files ?\nPress OK for the former', 2, button1 = 0, button2 = 1 ) - 1
+
+        if inputOrOutput == 0 :
+            folder = str( QtGui.QFileDialog.getExistingDirectory( parent = self, caption = "Select the folder ... " ) )
+            recursive = QtGui.QMessageBox.question( self, 'Recursive ?', 'Search recursively ?', 2, button1 = 0, button2 = 1 ) - 1
+            filterString = QtGui.QInputDialog.getText( self, 'Filter String', 'Enter a part of the file name or extension' )
+            
+            if filterString[1] == False :
+                return
+            filterString = filterString[0]
+
+            if recursive == 1:
+                ourList = filter( lambda x : re.match( '.*%s.*'%filterString, x ), os.listdir( folder ) )
+
+            else :
+                ourList = []
+                gen = os.walk( folder )
+                while 1 :
+                    try :
+                        fileListTuple = gen.next()[1:]
+
+                        fileList = []
+                        for i in fileListTuple :
+                            fileList.extend( i )
+                        
+                        ourList.extend( filter( lambda x : re.match( '.*%s.*'%filterString, x ), fileList ) )
+                    except BaseException :
+                        break
+            self.inputsList.selectedItems()[0].setText( 2, ( 'list( %s )'%', '.join( ourList ) ) )
+        else :
+            folder = str( QtGui.QFileDialog.getExistingDirectory( parent = self, caption = "Select the folder ... " ) )
+            if folder != '' :
+                folder += '/'
+
+            self.inputsList.selectedItems()[0].setText( 2, '' )
+
+            fileName = QtGui.QInputDialog.getText( self, 'How should the file name be ?', 'Enter a filename with extension.\nThe selected cell will be filled with a list of names like (filename)(random number).(extension).' )
+            
+            if fileName[1] == False :
+                return
+            fileName = str( fileName[0] )
+            
+            i = 0
+            node = self.inputsList.topLevelItem( self.inputsList.topLevelItemCount() - 1 )
+            while i < node.childCount()  :
+                cur = str( node.child( i ).text( 2 ) )
+                if len( cur ) <= 6 or cur[:5] != 'list(' or cur[-1] != ')' :
+                    i += 1
+                    continue
+                length = len( cur[5:][:-1].strip().split(',') )
+                
+                template = fileName.split( '.' )
+            
+                out = []
+                import random
+                for i in range( length ) :
+                    if len( template ) == 1 :
+                        out.append( '%s%s%d'%( folder, template[0], random.randint( 0, 100*length ) ) )
+                    else :
+                        out.append( '%s%s%d.%s'%( folder, template[0], random.randint( 0, 100*length ), '.'.join( template[1:] ) ) )
+
+                self.inputsList.selectedItems()[0].setText( 2, ( 'list( %s )'%', '.join( out ) ) )
+                break
+
+            if i == node.childCount()  and str( self.inputsList.selectedItems()[0].text( 2 ) ) == '' :
+                QtGui.QMessageBox.warning( self, 'Error !', 'None of your inputs have a properly formatted list.' )
+
+
+
+    def helpMe( self ) :
+        h = QtGui.QTextEdit(self)
+        h.setGeometry( QtCore.QRect( 280, 50, 460, 401 ) )
+        h.setWindowFlags( QtCore.Qt.Dialog )
+        h.setReadOnly( True )
+        h.append( helpText )
+        h.show()
+
+
+
+
+  
+    def setupUi( self, MainWindow ):
+        MainWindow.setObjectName( "MainWindow" )
+        MainWindow.resize( 640, 480 )
+        sizePolicy = QtGui.QSizePolicy( QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred )
+        sizePolicy.setHorizontalStretch( 0 )
+        sizePolicy.setVerticalStretch( 0 )
+        sizePolicy.setHeightForWidth( MainWindow.sizePolicy().hasHeightForWidth() )
+        MainWindow.setSizePolicy( sizePolicy )
+        MainWindow.setMinimumSize( QtCore.QSize( 640, 480 ) )
+        MainWindow.setMaximumSize( QtCore.QSize( 640, 480 ) )
+
+        self.centralwidget = QtGui.QWidget( MainWindow )
+        self.centralwidget.setObjectName( "centralwidget" )
         
-        i = 0
-        while i < self.tableWidget.rowCount()  :
-            cur = str( self.tableWidget.item(i, 1).text() )
-            if len( cur ) <= 6 or cur[:5] != 'list(' or cur[-1] != ')' :
-                i += 1
-                continue
-            length = len( cur[5:][:-1].strip().split(',') )
-            
-            template = str( self.formatLineEdit.text() ).split( '.' )
-            if len( template ) > 2 :
-                i += 1
-                continue
-            if len( template ) == 1 :
-                template.append( '' )
+        self.snippetsList = ListWidget( self.centralwidget )
+        self.snippetsList.setGeometry(QtCore.QRect(0, 20, 180, 360))
+        self.snippetsList.setDragDropMode( QtGui.QAbstractItemView.DragOnly )
+        self.snippetsList.setObjectName( "snippetsList" )
+        
+        self.inputsList = TreeWidget( self.centralwidget )
+        self.inputsList.setGeometry( QtCore.QRect( 180, 0, 460, 401 ) )
+        self.inputsList.setMouseTracking( True )
+        self.inputsList.setAcceptDrops( True )
+        self.inputsList.setEditTriggers( QtGui.QAbstractItemView.AllEditTriggers )
+        self.inputsList.setDragDropOverwriteMode( True )
+        self.inputsList.setDragDropMode( QtGui.QAbstractItemView.DragDrop )
+        self.inputsList.setSelectionBehavior( QtGui.QAbstractItemView.SelectItems )
+        self.inputsList.setObjectName( "inputsList" )
 
-            out = []
-            import random
-            for i in range( length ) :
-                out.append( '%s%d.%s'%( template[0], random.randint( 0, 100*length ), template[1] ) )
-
-            self.listPlainTextEdit.setPlainText( 'list( %s )'%', '.join( out ) )
-            break
-
-        if i == self.tableWidget.rowCount()  and str( self.listPlainTextEdit.toPlainText() ) == '' :
-            QtGui.QMessageBox.warning( self, 'Error !', 'None of your inputs have a properly formatted list.' )
-            
-
-
-
-
-    def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(901, 595)
-        MainWindow.setMinimumSize(QtCore.QSize(901, 595))
-        MainWindow.setMaximumSize(QtCore.QSize(901, 595))
-
-        self.centralwidget = QtGui.QWidget(MainWindow)
-        self.centralwidget.setObjectName("centralwidget")
-
-        self.comboBox = QtGui.QComboBox(self.centralwidget)
-        self.comboBox.setGeometry(QtCore.QRect(10, 10, 161, 31))
-        self.comboBox.setObjectName("comboBox")
-
-        self.sInputs = QtGui.QPushButton(self.centralwidget)
-        self.sInputs.setGeometry(QtCore.QRect(110, 370, 85, 27))
-        self.sInputs.setObjectName("sInputs")
-
-        self.treeWidget = QtGui.QTreeWidget(self.centralwidget)
-        self.treeWidget.setGeometry(QtCore.QRect(400, 10, 481, 381))
-        self.treeWidget.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
-        self.treeWidget.setObjectName("treeWidget")
-        self.treeWidget.setDragEnabled(True)
-        self.treeWidget.setWordWrap(True)
-        self.treeWidget.setDragDropMode(QtGui.QAbstractItemView.DragOnly)
-        self.treeWidget.expandAll()
-
-        self.tableWidget = myQTableWidget(self.centralwidget)
-        self.tableWidget.setGeometry(QtCore.QRect(10, 60, 371, 301))
-        self.tableWidget.setObjectName("tableWidget")
-        self.tableWidget.setDragDropOverwriteMode( True )
-        self.tableWidget.setColumnCount(2)
-        self.tableWidget.setDragDropMode( QtGui.QAbstractItemView.DropOnly )
-        self.tableWidget.horizontalHeader().setResizeMode( QtGui.QHeaderView.Stretch )
-
-        item = QtGui.QTableWidgetItem()
-        self.tableWidget.setHorizontalHeaderItem(0, item)
-        item = QtGui.QTableWidgetItem()
-        self.tableWidget.setHorizontalHeaderItem(1, item)
-        item = QtGui.QTableWidgetItem()
-        self.tableWidget.setHorizontalHeaderItem(2, item)
-
-        self.getListLabel = QtGui.QLabel(self.centralwidget)
-        self.getListLabel.setGeometry(QtCore.QRect(10, 420, 161, 21))
-        self.getListLabel.setObjectName("getListLabel")
-
-        self.recursive = QtGui.QCheckBox(self.centralwidget)
-        self.recursive.setGeometry(QtCore.QRect(10, 450, 90, 22))
-        self.recursive.setLayoutDirection(QtCore.Qt.RightToLeft)
-        self.recursive.setChecked(True)
-        self.recursive.setObjectName("recursive")
-
-        self.directoryLineEdit = QtGui.QLineEdit(self.centralwidget)
-        self.directoryLineEdit.setGeometry(QtCore.QRect(90, 480, 151, 31))
-        self.directoryLineEdit.setObjectName("directoryLineEdit")
-        self.directoryLabel = QtGui.QLabel(self.centralwidget)
-        self.directoryLabel.setGeometry(QtCore.QRect(20, 490, 57, 17))
-        self.directoryLabel.setObjectName("directoryLabel")
-
-        self.filterLabel = QtGui.QLabel(self.centralwidget)
-        self.filterLabel.setGeometry(QtCore.QRect(20, 530, 181, 16))
-        self.filterLabel.setObjectName("filterLabel")
-
-        self.filterLineEdit = QtGui.QLineEdit(self.centralwidget)
-        self.filterLineEdit.setGeometry(QtCore.QRect(210, 520, 113, 27))
-        self.filterLineEdit.setObjectName("filterLineEdit")
-
-        self.getListButton = QtGui.QPushButton(self.centralwidget)
-        self.getListButton.setGeometry(QtCore.QRect(120, 560, 85, 27))
-        self.getListButton.setObjectName("getListButton")
-
-        self.listPlainTextEdit = QtGui.QPlainTextEdit(self.centralwidget)
-        self.listPlainTextEdit.setGeometry(QtCore.QRect(390, 450, 271, 101))
-        self.listPlainTextEdit.setReadOnly(True)
-        self.listPlainTextEdit.setObjectName("listPlainTextEdit")
-
-        self.listLabel = QtGui.QLabel(self.centralwidget)
-        self.listLabel.setGeometry(QtCore.QRect(390, 420, 57, 17))
-        self.listLabel.setObjectName("listLabel")
-
-        self.line = QtGui.QFrame(self.centralwidget)
-        self.line.setGeometry(QtCore.QRect(0, 400, 701, 20))
-        self.line.setFrameShape(QtGui.QFrame.HLine)
-        self.line.setFrameShadow(QtGui.QFrame.Sunken)
-        self.line.setObjectName("line")
-
+        self.line = QtGui.QFrame( self.centralwidget )
+        self.line.setGeometry( QtCore.QRect( 0, 410, 640, 3 ) )
+        self.line.setFrameShape( QtGui.QFrame.HLine )
+        self.line.setFrameShadow( QtGui.QFrame.Sunken )
+        self.line.setObjectName( "line" )
+        
         self.line_2 = QtGui.QFrame(self.centralwidget)
-        self.line_2.setGeometry(QtCore.QRect(380, 0, 20, 411))
+        self.line_2.setGeometry(QtCore.QRect(450, 410, 3, 70))
         self.line_2.setFrameShape(QtGui.QFrame.VLine)
         self.line_2.setFrameShadow(QtGui.QFrame.Sunken)
         self.line_2.setObjectName("line_2")
-
-
-        self.doneButton = QtGui.QPushButton(self.centralwidget)
-        self.doneButton.setGeometry(QtCore.QRect(290, 10, 85, 31))
-        self.doneButton.setObjectName("doneButton")
-
-        self.getFileListButton = QtGui.QPushButton(self.centralwidget)
-        self.getFileListButton.setGeometry(QtCore.QRect(570, 560, 101, 27))
-        self.getFileListButton.setObjectName("getFileListButton")
         
-        self.formatLineEdit = QtGui.QLineEdit(self.centralwidget)
-        self.formatLineEdit.setGeometry(QtCore.QRect(440, 560, 113, 31))
-        self.formatLineEdit.setObjectName("formatLineEdit")
+        self.finishButton = QtGui.QPushButton(self.centralwidget)
+        self.finishButton.setGeometry(QtCore.QRect(460, 420, 87, 27))
+        self.finishButton.setObjectName("finishButton")
         
-        self.formatLabel = QtGui.QLabel(self.centralwidget)
-        self.formatLabel.setGeometry(QtCore.QRect(390, 570, 57, 17))
-        self.formatLabel.setObjectName("formatLabel")
+        self.helpButton = QtGui.QPushButton(self.centralwidget)
+        self.helpButton.setGeometry(QtCore.QRect(550, 450, 87, 27))
+        self.helpButton.setObjectName("helpButton")
         
-        MainWindow.setCentralWidget(self.centralwidget)
+        self.insertListsButton = QtGui.QPushButton(self.centralwidget)
+        self.insertListsButton.setGeometry(QtCore.QRect(460, 450, 87, 27))
+        self.insertListsButton.setObjectName("insertListsButton")
+        
+        self.clearInputsButton = QtGui.QPushButton(self.centralwidget)
+        self.clearInputsButton.setGeometry(QtCore.QRect(550, 420, 87, 27))
+        self.clearInputsButton.setObjectName("clearInputsButton")
 
-        self.retranslateUi(MainWindow)
-        QtCore.QObject.connect(self.comboBox, QtCore.SIGNAL("activated(int)"), self.showSnippet)
-        QtCore.QObject.connect(self.getListButton, QtCore.SIGNAL("clicked()"), self.listPlainTextEdit.clear)
-        QtCore.QObject.connect(self.sInputs, QtCore.SIGNAL("clicked()"), self.submitInputs)
-        QtCore.QObject.connect(self.getListButton, QtCore.SIGNAL("clicked()"), self.getList)
-        QtCore.QObject.connect(self.doneButton, QtCore.SIGNAL("clicked()"), self.done)
-        QtCore.QObject.connect(self.getFileListButton, QtCore.SIGNAL("clicked()"), self.getOutputFileList )
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        self.addSnippetButton = QtGui.QPushButton(self.centralwidget)
+        self.addSnippetButton.setGeometry(QtCore.QRect(0, 380, 87, 27))
+        self.addSnippetButton.setObjectName("addSnippetButton")
 
-        #------------------------------------------------------------------------------------------------------
+        self.insertFileOrFolderButton = QtGui.QPushButton(self.centralwidget)
+        self.insertFileOrFolderButton.setGeometry(QtCore.QRect(90, 380, 80, 27))
+        self.insertFileOrFolderButton.setObjectName("insertFileOrFolderButton")
 
-        # Populate the combo-box with snippets
+        self.snippetsLabel = QtGui.QLabel(self.centralwidget)
+        self.snippetsLabel.setGeometry(QtCore.QRect(0, 0, 210, 17))
+        self.snippetsLabel.setObjectName("snippetsLabel")
+
+        MainWindow.setCentralWidget( self.centralwidget )
+
+        self.retranslateUi( MainWindow )
+        QtCore.QObject.connect( self.clearInputsButton, QtCore.SIGNAL( "clicked()" ), self.clearInputs )
+        QtCore.QObject.connect(self.addSnippetButton, QtCore.SIGNAL("clicked()"), self.displaySnippet )
+        QtCore.QObject.connect(self.finishButton, QtCore.SIGNAL("clicked()"), self.finishWorkflow )
+        QtCore.QObject.connect(self.insertFileOrFolderButton, QtCore.SIGNAL("clicked()"), self.insertFolder )
+        QtCore.QObject.connect(self.insertListsButton, QtCore.SIGNAL("clicked()"), self.insertLists )
+        QtCore.QObject.connect(self.helpButton, QtCore.SIGNAL("clicked()"), self.helpMe )
+        QtCore.QMetaObject.connectSlotsByName( MainWindow )
+        
+        # Populate the list with snippets
         s = filter( lambda x: x[0] != '_' and x != 'os' and x != 'sys' and x != 'module', dir( snippets ) )
         for i in s :
-            self.comboBox.addItem( i )
+            item = QtGui.QListWidgetItem( i )
+            self.snippetsList.addItem( item )
+            item.setFlags( QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEnabled )
+            self.snippetsList.addItem( item )
 
 
 
-
-    def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "Shellom - The Automator Port", None, QtGui.QApplication.UnicodeUTF8))
-        self.sInputs.setText(QtGui.QApplication.translate("MainWindow", "Submit Inputs", None, QtGui.QApplication.UnicodeUTF8))
-        self.tableWidget.horizontalHeaderItem(0).setText(QtGui.QApplication.translate("MainWindow", "Input details", None, QtGui.QApplication.UnicodeUTF8))
-        self.tableWidget.horizontalHeaderItem(1).setText(QtGui.QApplication.translate("MainWindow", "Input", None, QtGui.QApplication.UnicodeUTF8))
-        __sortingEnabled = self.tableWidget.isSortingEnabled()
-        self.tableWidget.setSortingEnabled(False)
-        self.tableWidget.setSortingEnabled(__sortingEnabled)
-        self.getListLabel.setText(QtGui.QApplication.translate("MainWindow", "Form a list from a directory", None, QtGui.QApplication.UnicodeUTF8))
-        self.recursive.setText(QtGui.QApplication.translate("MainWindow", "Recursive", None, QtGui.QApplication.UnicodeUTF8))
-        self.directoryLabel.setText(QtGui.QApplication.translate("MainWindow", "Directory", None, QtGui.QApplication.UnicodeUTF8))
-        self.filterLabel.setText(QtGui.QApplication.translate("MainWindow", "Part of file name or extension", None, QtGui.QApplication.UnicodeUTF8))
-        self.getListButton.setText(QtGui.QApplication.translate("MainWindow", "Get List", None, QtGui.QApplication.UnicodeUTF8))
-        self.listLabel.setText(QtGui.QApplication.translate("MainWindow", "List", None, QtGui.QApplication.UnicodeUTF8))
-        self.doneButton.setText(QtGui.QApplication.translate("MainWindow", "Done !", None, QtGui.QApplication.UnicodeUTF8))
-        self.getFileListButton.setText(QtGui.QApplication.translate("MainWindow", "Get a list of files", None, QtGui.QApplication.UnicodeUTF8))
-        self.formatLabel.setText(QtGui.QApplication.translate("MainWindow", "Format", None, QtGui.QApplication.UnicodeUTF8))
-
-        self.treeWidget.headerItem().setText(0, QtGui.QApplication.translate("MainWindow", "Snippets", None, QtGui.QApplication.UnicodeUTF8))
-        self.treeWidget.setSortingEnabled(False)
+    def retranslateUi( self, MainWindow ):
+        MainWindow.setWindowTitle( QtGui.QApplication.translate( "MainWindow", "Shellom", None, QtGui.QApplication.UnicodeUTF8 ) )
+        __sortingEnabled = self.snippetsList.isSortingEnabled()
+        self.snippetsList.setSortingEnabled( False )
+        self.snippetsList.setSortingEnabled( __sortingEnabled )
+        self.inputsList.headerItem().setFlags( QtCore.Qt.NoItemFlags )
+        self.inputsList.headerItem().setText( 0, QtGui.QApplication.translate( "MainWindow", "Snippet", None, QtGui.QApplication.UnicodeUTF8 ) )
+        self.inputsList.headerItem().setText( 1, QtGui.QApplication.translate( "MainWindow", "Tag", None, QtGui.QApplication.UnicodeUTF8 ) )
+        self.inputsList.headerItem().setText( 2, QtGui.QApplication.translate( "MainWindow", "Input", None, QtGui.QApplication.UnicodeUTF8 ) )
+        self.finishButton.setText( QtGui.QApplication.translate( "MainWindow", "Finish", None, QtGui.QApplication.UnicodeUTF8 ) )
+        self.helpButton.setText( QtGui.QApplication.translate( "MainWindow", "Help", None, QtGui.QApplication.UnicodeUTF8 ) )
+        self.insertListsButton.setText( QtGui.QApplication.translate( "MainWindow", "Insert List", None, QtGui.QApplication.UnicodeUTF8 ) )
+        self.clearInputsButton.setText( QtGui.QApplication.translate( "MainWindow", "Clear inputs", None, QtGui.QApplication.UnicodeUTF8 ) )
+        self.addSnippetButton.setText(QtGui.QApplication.translate("MainWindow", "Add snippet", None, QtGui.QApplication.UnicodeUTF8))
+        self.insertFileOrFolderButton.setText(QtGui.QApplication.translate("MainWindow", "Insert folder", None, QtGui.QApplication.UnicodeUTF8))
+        self.snippetsLabel.setText(QtGui.QApplication.translate("MainWindow", " Snippets :", None, QtGui.QApplication.UnicodeUTF8))
 
 
-def main() :
-    import sys
-    app = QtGui.QApplication(sys.argv)
-    MainWindow = QtGui.QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
-    sys.exit(app.exec_())
 
 if __name__ == "__main__":
-    main()
+    import sys
+    app = QtGui.QApplication( sys.argv )
+    MainWindow = QtGui.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi( MainWindow )
+    MainWindow.show()
+    sys.exit( app.exec_() )

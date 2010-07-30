@@ -2,7 +2,7 @@
 try :
     import random, os
 except ImportError :
-    print "Couldn't import one or more of random and os."
+    print "Check if you have the following Python modules : random and os."
 
 class text2wav() :
     name = 'Convert the text in a file to a wav sound file'

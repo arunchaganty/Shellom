@@ -2,7 +2,7 @@
 try :
     import pexpect, random, os
 except ImportError :
-    print "Couldn't import one or more of pexpect, random and os."
+    print "Check if you have the pexpect Python module installed.\nInstall it using sudo apt-get install python-pexpect"
 
 class mountDiscImage() :
     name = 'Mount an ISO or UDF disc image'

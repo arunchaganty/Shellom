@@ -8,7 +8,7 @@ try :
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
 except ImportError :
-    print "Couldn't import one or more of smtplib, os, email.mime.image.MIMEImage, email.mime.text.MIMEText and email.mime.multipart.MIMEMultipart."
+    print "Check if you have the following Python modules : smtplib, os, email"
 
 class sendEMail() :
     name = 'Email a text message along with one attachment'
