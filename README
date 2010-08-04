@@ -1,7 +1,7 @@
 Author : Vikram Rao S 
 Date : 04-06-2010
 
-Shellom aims to be a Linux clone of Mac OSX's Automator (TM). It will have snippets of code that can be combined in order to execute useful tasks.
+Shellom aims to be a Linux clone of Mac OSX's Automator (TM). It has snippets of code that can be combined in order to execute useful tasks.
 
 Instructions for use :
     1. Run the gui.py script.
